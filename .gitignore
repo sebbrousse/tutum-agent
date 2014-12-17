@@ -21,4 +21,7 @@ _testmain.go
 
 *.exe
 *.test
-*.prof
+
+tutum-agent
+
+build/
