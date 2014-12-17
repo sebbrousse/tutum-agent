@@ -1,19 +1,20 @@
 tutum-agent
 ===========
 
-Agent to control Tutum nodes
+
+## What's this?
+
+This is the agent Tutum uses to set up nodes. It's a daemon that will register the host with the Tutum API using a user token (`TutumToken`), and will manage the installation, configuration and ongoing upgrade of the Docker daemon.
+
+For information on how to install it in your host, please check the [Bring Your Own Node](https://support.tutum.co/support/solutions/articles/5000513678-bring-your-own-node) documentation.
 
 
-# Functions
+## Running
 
-* Download docker binary
-* Register new nodes with Tutum
-* Launch docker daemon
-* Auto restart docker daemon on failure
+If installing from the `.deb` package, Tutum Agent will be configured in upstart to be launched on boot.
 
-## Run Tutum-agent 
 ```
-# ./tutum-agent -h     
+# tutum-agent -h     
 Usage of tutum-agent:
   -debug=false: Enable debug mode
   -stdout=false: Print log to stdout
@@ -27,58 +28,32 @@ Usage of tutum-agent:
 ```
 
 
-Configruation file is put in `/etc/tutum/agent/tutum-agent.conf` (json file)
+Configuration file is located in `/etc/tutum/agent/tutum-agent.conf` (JSON file) with the following structure:
 
-Items in `tutum-agent.conf`:
 ```
 {
 	"CertCommonName":"*.node.tutum.io",
 	"DockerBinaryURL":"https://files.tutum.co/packages/docker/latest.json",
 	"DockerHost":"tcp://0.0.0.0:2375",
 	"TutumHost":"https://dashboard.tutum.co/",
-	"TutumToken":"token",
-	"TutumUUID":"uuid"
+	"TutumToken":"<token>",
+	"TutumUUID":"<uuid>"
 }
-
 ```
 
-Const var used in  `tutum-agent`
-```
-const (
-        defaultCertCommonName  = ""
-        defaultDockerHost      = "tcp://0.0.0.0:2375"
-        defaultDockerBinaryURL = "https://files.tutum.co/packages/docker/latest.json"
-        defaultTutumHost       = "https://dashboard.tutum.co/"
-)
+## Logging
 
-const (
-        TutumHome = "/etc/tutum/agent"
-        DockerDir = "/usr/lib/tutum"
-        LogDir    = "/var/log/tutum"
+Logs are stored under `/var/log/tutum/`:
 
-        DockerLogFile   = "docker.log"
-        TutumLogFile    = "agent.log"
-        KeyFile         = "key.pem"
-        CertFile        = "cert.pem"
-        CAFile          = "ca.pem"
-        ConfigFile      = "tutum-agent.conf"
-        DockerBinary    = "docker"
-        DockerNewBinary = "docker.new"
+* `agent.log` contains the logs of the agent itself
+* `docker.log` contains the Docker daemon logs
 
-        RegEndpoint       = "api/agent/node/"
-        DockerDefaultHost = "unix:///var/run/docker.sock"
-
-        MaxWaitingTime    = 200 //seconds
-        HeartBeatInterval = 5   //second
-)
-
-```
 
 ## Building
 
-Run
+Run `make` to build binaries and `.deb` packages which will be stored in the `build/` folder.
 
-	make
 
-to build binaries and `.deb` packages which will be copied to the `build/` folder.
+## Known limitations
 
+Currently only tested on Ubuntu 14.04
