@@ -61,7 +61,6 @@ func StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath string) {
 			DockerProcess = nil
 		}
 	}(command)
-
 }
 
 func StopDocker() {
@@ -92,6 +91,7 @@ func DownloadDocker(url, dockerBinPath string) {
 
 		Logger.Println("Writing docker binary to", dockerBinPath)
 		writeDockerFile(binary, dockerBinPath)
+		createDockerSymlink(dockerBinPath, DockerSymbolicLink)
 	}
 }
 
@@ -113,6 +113,7 @@ func UpdateDocker(dockerBinPath, dockerNewBinPath, dockerNewBinSigPath, keyFileP
 			if err := os.RemoveAll(dockerNewBinSigPath); err != nil {
 				Logger.Println(err.Error())
 			}
+			createDockerSymlink(dockerBinPath, DockerSymbolicLink)
 			StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath)
 		} else {
 			Logger.Println("New docker binary signature cannot be verified. Update is rejected!")
@@ -263,4 +264,15 @@ func verifyDockerSig(dockerNewBinPath, dockerNewBinSigPath string) bool {
 		return false
 	}
 	return true
+}
+
+func createDockerSymlink(dockerBinPath, dockerSymbolicLink string) {
+	Logger.Println("Removing the docker symbolic from ", dockerSymbolicLink)
+	if err := os.RemoveAll(DockerSymbolicLink); err != nil {
+		Logger.Println(err.Error())
+	}
+	Logger.Println("Creating the docker symbolic to ", dockerSymbolicLink)
+	if err := os.Symlink(dockerBinPath, DockerSymbolicLink); err != nil {
+		Logger.Println(err.Error())
+	}
 }

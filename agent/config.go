@@ -32,6 +32,7 @@ const (
 	DockerDir = "/usr/lib/tutum"
 	LogDir    = "/var/log/tutum"
 
+	DockerSymbolicLink     = "/usr/bin/docker"
 	DockerLogFileName      = "docker.log"
 	TutumLogFileName       = "agent.log"
 	KeyFileName            = "key.pem"
