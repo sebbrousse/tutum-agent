@@ -60,8 +60,8 @@ func main() {
 		// try to restart docker daemon if it dies somehow
 		if DockerProcess == nil {
 			time.Sleep(HeartBeatInterval * time.Second)
-			if DockerProcess == nil {
-				Logger.Println("Docker daemon died somehow, respawning")
+			if DockerProcess == nil && ScheduleToTerminateDocker == false {
+				Logger.Println("Respawning docker daemon")
 				StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath)
 			}
 		}

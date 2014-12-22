@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -52,14 +51,17 @@ func StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath string) {
 		}
 
 		Logger.Println("Starting docker daemon:", command.Args)
+
 		if err := cmd.Start(); err != nil {
 			Logger.Println("Cannot start docker daemon:", err)
 		}
 		DockerProcess = cmd.Process
+		Logger.Println("Docker daemon has been started")
 		if err := cmd.Wait(); err != nil {
-			Logger.Println("Docker daemon is terminated:", err)
-			DockerProcess = nil
+			Logger.Println("Docker daemon died with error:", err)
 		}
+		Logger.Println("Docker daemon died")
+		DockerProcess = nil
 	}(command)
 }
 
@@ -98,8 +100,10 @@ func DownloadDocker(url, dockerBinPath string) {
 func UpdateDocker(dockerBinPath, dockerNewBinPath, dockerNewBinSigPath, keyFilePath, certFilePath, caFilePath string) {
 	if utils.FileExist(dockerNewBinPath) {
 		Logger.Printf("New Docker binary(%s) found\n", dockerNewBinPath)
+		Logger.Println("Updating docker...")
 		if verifyDockerSig(dockerNewBinPath, dockerNewBinSigPath) {
 			Logger.Println("Stopping docker daemon")
+			ScheduleToTerminateDocker = true
 			StopDocker()
 			Logger.Println("Removing old docker binary")
 			if err := os.RemoveAll(dockerBinPath); err != nil {
@@ -114,7 +118,9 @@ func UpdateDocker(dockerBinPath, dockerNewBinPath, dockerNewBinSigPath, keyFileP
 				Logger.Println(err.Error())
 			}
 			createDockerSymlink(dockerBinPath, DockerSymbolicLink)
+			ScheduleToTerminateDocker = false
 			StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath)
+			Logger.Println("Succeeded to update docker binary")
 		} else {
 			Logger.Println("New docker binary signature cannot be verified. Update is rejected!")
 			Logger.Println("Removing the invalid docker binary ", dockerNewBinPath)
@@ -125,6 +131,7 @@ func UpdateDocker(dockerBinPath, dockerNewBinPath, dockerNewBinSigPath, keyFileP
 			if err := os.RemoveAll(dockerNewBinSigPath); err != nil {
 				Logger.Println(err.Error())
 			}
+			Logger.Println("Failed to update docker binary")
 		}
 	}
 }
@@ -256,13 +263,12 @@ func getBodyFromURL(url string) ([]byte, error) {
 
 func verifyDockerSig(dockerNewBinPath, dockerNewBinSigPath string) bool {
 	cmd := exec.Command("gpg", "--verify", dockerNewBinSigPath, dockerNewBinPath)
-	UnsetHandler()
 	err := cmd.Run()
-	SetHandler()
 	if err != nil {
-		fmt.Println(err.Error())
+		Logger.Println("gpg verfication failed:", err.Error())
 		return false
 	}
+	Logger.Println("gpg verfication passed")
 	return true
 }
 
