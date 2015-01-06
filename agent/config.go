@@ -20,7 +20,7 @@ var (
 )
 
 const (
-	VERSION                = "0.11.1"
+	VERSION                = "0.11.2"
 	defaultCertCommonName  = ""
 	defaultDockerHost      = "tcp://0.0.0.0:2375"
 	defaultDockerBinaryURL = "https://files.tutum.co/packages/docker/latest.json"
