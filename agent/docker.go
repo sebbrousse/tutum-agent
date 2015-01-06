@@ -35,7 +35,7 @@ func StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath string) {
 		"--tlscert", certFilePath,
 		"--tlskey", keyFilePath,
 		"--tlscacert", caFilePath,
-		"--tls")
+		"--tlsverify")
 
 	go func(cmd *exec.Cmd) {
 		//open file to log docker logs
