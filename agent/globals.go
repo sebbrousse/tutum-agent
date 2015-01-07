@@ -45,4 +45,6 @@ const (
 
 	MaxWaitingTime    = 200 //seconds
 	HeartBeatInterval = 5   //second
+
+	RenicePriority = -10
 )

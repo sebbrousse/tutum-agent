@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -56,7 +57,11 @@ func StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath string) {
 			Logger.Println("Cannot start docker daemon:", err)
 		}
 		DockerProcess = cmd.Process
-		Logger.Println("Docker daemon has been started")
+		Logger.Printf("Docker daemon (PID:%d) has been started", DockerProcess.Pid)
+
+		Logger.Printf("Renicing docker daemon to priority %d", RenicePriority)
+		renice(DockerProcess.Pid, RenicePriority)
+
 		if err := cmd.Wait(); err != nil {
 			Logger.Println("Docker daemon died with error:", err)
 		}
@@ -93,8 +98,8 @@ func DownloadDocker(url, dockerBinPath string) {
 
 		Logger.Println("Writing docker binary to", dockerBinPath)
 		writeDockerFile(binary, dockerBinPath)
-		createDockerSymlink(dockerBinPath, DockerSymbolicLink)
 	}
+	createDockerSymlink(dockerBinPath, DockerSymbolicLink)
 }
 
 func UpdateDocker(dockerBinPath, dockerNewBinPath, dockerNewBinSigPath, keyFilePath, certFilePath, caFilePath string) {
@@ -281,4 +286,14 @@ func createDockerSymlink(dockerBinPath, dockerSymbolicLink string) {
 	if err := os.Symlink(dockerBinPath, DockerSymbolicLink); err != nil {
 		Logger.Println(err.Error())
 	}
+}
+
+func renice(pid int, priority int) bool {
+	cmd := exec.Command("renice", "-n", fmt.Sprintf("%d", priority), fmt.Sprintf("%d", pid))
+	output, err := cmd.CombinedOutput()
+	Logger.Println(string(output))
+	if err != nil {
+		return false
+	}
+	return true
 }
