@@ -29,17 +29,17 @@ type PatchForm struct {
 	Version     string `json:"agent_version"`
 }
 
-func PostToTutum(url, caFilePath, configFilePath string) {
+func PostToTutum(url, caFilePath, configFilePath string) error {
 	form := PostForm{}
 	form.Version = VERSION
 	data, err := json.Marshal(form)
 	if err != nil {
 		Logger.Fatalln("Cannot marshal the POST form", err)
 	}
-	Register(url, "POST", Conf.TutumToken, Conf.TutumUUID, caFilePath, configFilePath, data)
+	return Register(url, "POST", Conf.TutumToken, Conf.TutumUUID, caFilePath, configFilePath, data)
 }
 
-func PatchToTutum(url, caFilePath, certFilePath, configFilePath string) {
+func PatchToTutum(url, caFilePath, certFilePath, configFilePath string) error {
 	form := PatchForm{}
 	form.Version = VERSION
 	cert, err := GetCertificate(certFilePath)
@@ -53,10 +53,10 @@ func PatchToTutum(url, caFilePath, certFilePath, configFilePath string) {
 		Logger.Fatalln("Cannot marshal the PATCH form", err)
 	}
 
-	Register(url, "PATCH", Conf.TutumToken, Conf.TutumUUID, caFilePath, configFilePath, data)
+	return Register(url, "PATCH", Conf.TutumToken, Conf.TutumUUID, caFilePath, configFilePath, data)
 }
 
-func Register(url, method, token, uuid, caFilePath, configFilePath string, data []byte) {
+func Register(url, method, token, uuid, caFilePath, configFilePath string, data []byte) error {
 	if token == "" {
 		fmt.Fprintf(os.Stderr, "Tutum token is empty. Please run 'tutum-agent set TutumToken=xxx' first!")
 		Logger.Fatalln("Tutum token is empty. Please run 'tutum-agent set TutumToken=xxx' first!")
@@ -69,8 +69,11 @@ func Register(url, method, token, uuid, caFilePath, configFilePath string, data 
 		body, err := sendRegRequest(url, method, token, uuid, data)
 		if err == nil {
 			if err = handleResponse(body, caFilePath, configFilePath); err == nil {
-				break
+				return nil
 			}
+		}
+		if err.Error() == "Error 404" {
+			return err
 		}
 		Logger.Printf("Registration failed: %s. Retry in %d seconds\n", err.Error(), i)
 		time.Sleep(time.Duration(i) * time.Second)
@@ -112,7 +115,8 @@ func sendRegRequest(url, method, token, uuid string, data []byte) ([]byte, error
 			Logger.Println("=> Body:", string(body))
 		}
 		return body, nil
-
+	case 404:
+		return nil, errors.New("Error 404")
 	default:
 		if *DebugMode {
 			Logger.Println("=======Response Info (ERROR) ======")
@@ -131,7 +135,7 @@ func handleResponse(body []byte, caFilePath, configFilePath string) error {
 	if err := json.Unmarshal(body, &responseForm); err != nil {
 		return errors.New("Cannot unmarshal json from response")
 	}
-	if err := ioutil.WriteFile(caFilePath, []byte(responseForm.UserCaCert), 0755); err != nil {
+	if err := ioutil.WriteFile(caFilePath, []byte(responseForm.UserCaCert), 0644); err != nil {
 		Logger.Print("Failed to save "+caFilePath, err)
 	}
 	// Update global Conf
@@ -147,7 +151,7 @@ func handleResponse(body []byte, caFilePath, configFilePath string) error {
 		Conf.TutumUUID = responseForm.TutumUUID
 	}
 
-	if responseForm.DockerBinaryURL != "" {
+	if responseForm.DockerBinaryURL != "" && Conf.DockerBinaryURL != responseForm.DockerBinaryURL {
 		Logger.Printf("Docker binary is set to be downloaded from %s\n", responseForm.DockerBinaryURL)
 		isModified = true
 		Conf.DockerBinaryURL = responseForm.DockerBinaryURL
