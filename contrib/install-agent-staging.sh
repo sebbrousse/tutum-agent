@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Usage:
-# curl -Ls https://files.tutum.co/scripts/install-agent-staging.sh | sudo sh -s [TutumToken] [TutumUUID] [CertCommonName]
+# curl -Ls https://files.tutum.co/scripts/install-agent-staging.sh | sudo -H sh -s [TutumToken] [TutumUUID] [CertCommonName]
 #
 set -e
 GPG_KEY_ID=A87A2270
