@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Usage:
-# curl -Ls https://files.tutum.co/scripts/install-agent.sh | sudo -H sh -s [TutumToken] [TutumUUID] [CertCommonName]
+# curl -Ls https://get.tutum.co/ | sudo -H sh -s [TutumToken] [TutumUUID] [CertCommonName]
 #
 set -e
 GPG_KEY_ID=A87A2270
@@ -13,12 +13,12 @@ echo "-> Adding Tutum's GPG key..."
 apt-key adv --keyserver hkp://keyserver.ubuntu.com --recv-keys $GPG_KEY_ID > /dev/null
 gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys $GPG_KEY_ID > /dev/null
 echo "-> Installing required dependencies..."
-apt-get update -qq && apt-get install -yq apt-transport-https curl > /dev/null
+apt-get update -qq && apt-get install -yq apt-transport-https > /dev/null
 apt-get install -yq linux-image-extra-$(uname -r) > /dev/null || \
     echo "Failed to install linux-image-extra package. AUFS support may not be available."
 echo "-> Installing tutum-agent..."
 echo deb [arch=amd64] https://$S3_BUCKET/ubuntu/ tutum main > /etc/apt/sources.list.d/tutum.list
-apt-get update -qq && apt-get install -yq tutum-agent > /dev/null
+apt-get update -qq -o Dir::Etc::sourceparts="/dev/null" -o APT::List-Cleanup=0 -o Dir::Etc::sourcelist="sources.list.d/tutum.list" && apt-get install -yq tutum-agent > /dev/null
 echo "-> Configuring tutum-agent..."
 mkdir -p /etc/tutum/agent
 tutum-agent set TutumHost="$TUTUM_HOST" > /dev/null
