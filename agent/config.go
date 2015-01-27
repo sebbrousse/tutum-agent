@@ -21,8 +21,9 @@ type Configuration struct {
 func ParseFlag() {
 	FlagDebugMode = flag.Bool("debug", false, "Enable debug mode")
 	FlagLogToStdout = flag.Bool("stdout", false, "Print log to stdout")
-	FlagStandalone = flag.Bool("standalone", false, "Standalone mode (skips node registration with Tutum)")
+	FlagStandalone = flag.Bool("standalone", false, "Standalone mode, skipping reg with tutum")
 	FlagDockerHost = flag.String("docker-host", "", "Override 'DockerHost'")
+	FlagDockerOpts = flag.String("docker-opts", "", "Add additional flags to run docker daemon")
 	FlagTutumHost = flag.String("tutum-host", "", "Override 'TutumHost'")
 	FlagTutumToken = flag.String("tutum-token", "", "Override 'TutumToken'")
 	FlagTutumUUID = flag.String("tutum-uuid", "", "Override 'TutumUUID'")

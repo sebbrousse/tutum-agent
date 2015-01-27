@@ -29,19 +29,21 @@ type DockerMgmtDef struct {
 func StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath string) {
 	var command *exec.Cmd
 
-	if *FlagStandalone {
-		command = exec.Command(dockerBinPath, "-d",
-			"-H", Conf.DockerHost,
-			"-H", DockerDefaultHost)
-	} else {
-		command = exec.Command(dockerBinPath, "-d",
-			"-H", Conf.DockerHost,
-			"-H", DockerDefaultHost,
-			"--tlscert", certFilePath,
-			"--tlskey", keyFilePath,
-			"--tlscacert", caFilePath,
-			"--tlsverify")
+	cmdstring := fmt.Sprintf("-d -H %s -H %s --tlscert %s --tlskey %s --tlscacert %s --tlsverify",
+		Conf.DockerHost, DockerDefaultHost, certFilePath, keyFilePath, caFilePath)
+
+	if *FlagStandalone && !utils.FileExist(caFilePath) {
+		cmdstring = fmt.Sprintf("-d -H %s -H %s --tlscert %s --tlskey %s --tls",
+			Conf.DockerHost, DockerDefaultHost, certFilePath, keyFilePath)
+		fmt.Fprintln(os.Stderr, "WARNING: standalone mode activated but no CA certificate found - client authentication disabled")
 	}
+
+	if *FlagDockerOpts != "" {
+		cmdstring = cmdstring + " " + *FlagDockerOpts
+	}
+	cmdslice := strings.Split(cmdstring, " ")
+
+	command = exec.Command(dockerBinPath, cmdslice...)
 
 	go func(cmd *exec.Cmd) {
 		//open file to log docker logs

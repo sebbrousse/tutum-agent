@@ -10,6 +10,7 @@ var (
 	FlagLogToStdout *bool
 	FlagStandalone  *bool
 	FlagDockerHost  *string
+	FlagDockerOpts  *string
 	FlagTutumHost   *string
 	FlagTutumToken  *string
 	FlagTutumUUID   *string
