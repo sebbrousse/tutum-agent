@@ -15,12 +15,17 @@ If installing from the `.deb` package, Tutum Agent will be configured in upstart
 
 ```
 # tutum-agent -h     
-Usage of tutum-agent:
+Usage of ./tutum-agent:
   -debug=false: Enable debug mode
+  -docker-host="": Override 'DockerHost'
+  -docker-opts="": Add additional flags to run docker daemon
+  -standalone=false: Standalone mode, skipping reg with tutum
   -stdout=false: Print log to stdout
+  -tutum-host="": Override 'TutumHost'
+  -tutum-token="": Override 'TutumToken'
+  -tutum-uuid="": Override 'TutumUUID'
    set: Set items in the config file and exit, supported items
           CertCommonName="xxx"
-          DockerBinaryURL="xxx"
           DockerHost="xxx"
           TutumHost="xxx"
           TutumToken="xxx"
@@ -33,7 +38,6 @@ Configuration file is located in `/etc/tutum/agent/tutum-agent.conf` (JSON file)
 ```
 {
 	"CertCommonName":"*.node.tutum.io",
-	"DockerBinaryURL":"https://files.tutum.co/packages/docker/latest.json",
 	"DockerHost":"tcp://0.0.0.0:2375",
 	"TutumHost":"https://dashboard.tutum.co/",
 	"TutumToken":"<token>",
@@ -41,7 +45,7 @@ Configuration file is located in `/etc/tutum/agent/tutum-agent.conf` (JSON file)
 }
 ```
 
-## Logging
+## Logging
 
 Logs are stored under `/var/log/tutum/`:
 
@@ -54,7 +58,7 @@ Logs are stored under `/var/log/tutum/`:
 Run `make` to build binaries and `.deb` packages which will be stored in the `build/` folder.
 
 
-## Known limitations
+## Known limitations
 
 Currently only tested on Ubuntu 14.04
 
