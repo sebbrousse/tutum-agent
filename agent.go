@@ -38,37 +38,48 @@ func main() {
 		os.RemoveAll(certFilePath)
 		os.RemoveAll(caFilePath)
 
-		Logger.Printf("Registering in Tutum via POST: %s ...\n", url)
-		PostToTutum(url, caFilePath, configFilePath)
+		if !*FlagStandalone {
+			Logger.Printf("Registering in Tutum via POST: %s ...\n", url)
+			PostToTutum(url, caFilePath, configFilePath)
+		}
 	}
 
 	Logger.Println("Checking if TLS certificate exists...")
-	CreateCerts(keyFilePath, certFilePath, Conf.CertCommonName)
-
-	Logger.Printf("Registering in Tutum via PATCH: %s ...\n", url+Conf.TutumUUID)
-	err := PatchToTutum(url, caFilePath, certFilePath, configFilePath)
-	if err != nil {
-		Logger.Printf("TutumUUID (%s) is invalid, trying to allocate a new one ...\n", Conf.TutumUUID)
-		Logger.Printf("Clearing invalid TutumUUID:%s ...\n", Conf.TutumUUID)
-		Conf.TutumUUID = ""
-		Logger.Print("Saving configuation to file ...")
-		SaveConf(configFilePath, Conf)
-
-		Logger.Printf("Removing all existing cert and key files", url)
-		os.RemoveAll(keyFilePath)
-		os.RemoveAll(certFilePath)
-		os.RemoveAll(caFilePath)
-
-		Logger.Printf("Registering in Tutum via POST: %s ...\n", url)
-		PostToTutum(url, caFilePath, configFilePath)
-
-		Logger.Println("Checking if TLS certificate exists...")
+	if *FlagStandalone {
+		commonName := Conf.CertCommonName
+		if commonName == "" {
+			commonName = "*"
+		}
+		CreateCerts(keyFilePath, certFilePath, commonName)
+	} else {
 		CreateCerts(keyFilePath, certFilePath, Conf.CertCommonName)
-
-		Logger.Printf("Registering in Tutum via PATCH: %s ...\n", url+Conf.TutumUUID)
-		PatchToTutum(url, caFilePath, certFilePath, configFilePath)
 	}
 
+	if !*FlagStandalone {
+		Logger.Printf("Registering in Tutum via PATCH: %s ...\n", url+Conf.TutumUUID)
+		err := PatchToTutum(url, caFilePath, certFilePath, configFilePath)
+		if err != nil {
+			Logger.Printf("TutumUUID (%s) is invalid, trying to allocate a new one ...\n", Conf.TutumUUID)
+			Logger.Printf("Clearing invalid TutumUUID:%s ...\n", Conf.TutumUUID)
+			Conf.TutumUUID = ""
+			Logger.Print("Saving configuation to file ...")
+			SaveConf(configFilePath, Conf)
+
+			Logger.Printf("Removing all existing cert and key files", url)
+			os.RemoveAll(keyFilePath)
+			os.RemoveAll(certFilePath)
+			os.RemoveAll(caFilePath)
+
+			Logger.Printf("Registering in Tutum via POST: %s ...\n", url)
+			PostToTutum(url, caFilePath, configFilePath)
+
+			Logger.Println("Checking if TLS certificate exists...")
+			CreateCerts(keyFilePath, certFilePath, Conf.CertCommonName)
+
+			Logger.Printf("Registering in Tutum via PATCH: %s ...\n", url+Conf.TutumUUID)
+			PatchToTutum(url, caFilePath, certFilePath, configFilePath)
+		}
+	}
 	Logger.Println("Check if docker binary exists...")
 	DownloadDocker(DockerBinaryURL, dockerBinPath)
 

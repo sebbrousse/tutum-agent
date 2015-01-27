@@ -29,13 +29,19 @@ type DockerMgmtDef struct {
 func StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath string) {
 	var command *exec.Cmd
 
-	command = exec.Command(dockerBinPath, "-d",
-		"-H", Conf.DockerHost,
-		"-H", DockerDefaultHost,
-		"--tlscert", certFilePath,
-		"--tlskey", keyFilePath,
-		"--tlscacert", caFilePath,
-		"--tlsverify")
+	if *FlagStandalone {
+		command = exec.Command(dockerBinPath, "-d",
+			"-H", Conf.DockerHost,
+			"-H", DockerDefaultHost)
+	} else {
+		command = exec.Command(dockerBinPath, "-d",
+			"-H", Conf.DockerHost,
+			"-H", DockerDefaultHost,
+			"--tlscert", certFilePath,
+			"--tlskey", keyFilePath,
+			"--tlscacert", caFilePath,
+			"--tlsverify")
+	}
 
 	go func(cmd *exec.Cmd) {
 		//open file to log docker logs

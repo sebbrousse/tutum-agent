@@ -23,10 +23,10 @@ func CreateCerts(keyFilePath, certFilePath, host string) {
 	if isCertificateExist(keyFilePath, certFilePath) {
 		Logger.Println("TLS certificate exists, skipping")
 	} else {
-		if Conf.CertCommonName == "" {
+		if host == "" {
 			Logger.Fatalln("CertCommonName is empty. This may be caused by failure on POSTing to Tutum.")
 		}
-		Logger.Println("No tls certificate founds, creating a new one using CN:", Conf.CertCommonName)
+		Logger.Println("No tls certificate founds, creating a new one using CN:", host)
 		genCetificate(keyFilePath, certFilePath, host)
 		Logger.Println("New tls certificate is generated")
 	}

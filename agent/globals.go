@@ -8,6 +8,7 @@ import (
 var (
 	FlagDebugMode   *bool
 	FlagLogToStdout *bool
+	FlagStandalone  *bool
 	FlagDockerHost  *string
 	FlagTutumHost   *string
 	FlagTutumToken  *string
