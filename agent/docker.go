@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -55,24 +56,78 @@ func StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath string) {
 			Logger.Println("Cannot set docker log to", dockerLog)
 		} else {
 			defer f.Close()
-			command.Stdout = f
-			command.Stderr = f
+			cmd.Stdout = f
+			cmd.Stderr = f
 		}
 
-		Logger.Println("Starting docker daemon:", command.Args)
+		Logger.Println("Starting docker daemon:", cmd.Args)
 
 		if err := cmd.Start(); err != nil {
 			Logger.Println("Cannot start docker daemon:", err)
 		}
 		DockerProcess = cmd.Process
-		Logger.Printf("Docker daemon (PID:%d) has been started", DockerProcess.Pid)
+		Logger.Printf("Docker daemon (PID:%d) has been started\n", DockerProcess.Pid)
 
-		Logger.Printf("Renicing docker daemon to priority %d", RenicePriority)
-		renice(DockerProcess.Pid, RenicePriority)
+		Logger.Printf("Renicing docker daemon to priority %d\n", RenicePriority)
+		syscall.Setpriority(syscall.PRIO_PROCESS, DockerProcess.Pid, RenicePriority)
+
+		exit_renice := make(chan int)
+
+		go func() {
+			Logger.Println("Starting lower the priority of docker child processes")
+			for {
+				select {
+				case <-exit_renice:
+					Logger.Println("Exiting lower the priority of docker child processes")
+					return
+				default:
+					out, err := exec.Command("ps", "axo", "pid,ppid,ni").Output()
+					if err != nil {
+						Logger.Println(err)
+						continue
+					}
+					lines := strings.Split(string(out), "\n")
+					ppids := []int{DockerProcess.Pid}
+					for _, line := range lines {
+						items := strings.Fields(line)
+						if len(items) != 3 {
+							continue
+						}
+						pid, err := strconv.Atoi(items[0])
+						if err != nil {
+							continue
+						}
+						ppid, err := strconv.Atoi(items[1])
+						if err != nil {
+							continue
+						}
+						ni, err := strconv.Atoi(items[2])
+						if err != nil {
+							continue
+						}
+						if ni != RenicePriority {
+							continue
+						}
+						if pid == DockerProcess.Pid {
+							continue
+						}
+						for _, _ppid := range ppids {
+							if ppid == _ppid {
+								syscall.Setpriority(syscall.PRIO_PROCESS, pid, 0)
+								ppids = append(ppids, pid)
+								break
+							}
+						}
+					}
+					time.Sleep(5 * time.Second)
+				}
+			}
+		}()
 
 		if err := cmd.Wait(); err != nil {
 			Logger.Println("Docker daemon died with error:", err)
 		}
+		exit_renice <- 1
 		Logger.Println("Docker daemon died")
 		DockerProcess = nil
 	}(command)
@@ -294,14 +349,4 @@ func createDockerSymlink(dockerBinPath, dockerSymbolicLink string) {
 	if err := os.Symlink(dockerBinPath, DockerSymbolicLink); err != nil {
 		Logger.Println(err.Error())
 	}
-}
-
-func renice(pid int, priority int) bool {
-	cmd := exec.Command("renice", "-n", fmt.Sprintf("%d", priority), fmt.Sprintf("%d", pid))
-	output, err := cmd.CombinedOutput()
-	Logger.Println(string(output))
-	if err != nil {
-		return false
-	}
-	return true
 }

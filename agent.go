@@ -4,6 +4,7 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"syscall"
 	"time"
 
 	. "github.com/tutumcloud/tutum-agent/agent"
@@ -33,7 +34,7 @@ func main() {
 
 	url := utils.JoinURL(Conf.TutumHost, RegEndpoint)
 	if Conf.TutumUUID == "" {
-		Logger.Printf("Removing all existing cert and key files", url)
+		Logger.Printf("Removing all existing cert and key files %s\n", url)
 		os.RemoveAll(keyFilePath)
 		os.RemoveAll(certFilePath)
 		os.RemoveAll(caFilePath)
@@ -85,6 +86,9 @@ func main() {
 
 	Logger.Println("Setting system signals...")
 	HandleSig()
+
+	Logger.Printf("Renicing tutum agent to priority %d", RenicePriority)
+	syscall.Setpriority(syscall.PRIO_PROCESS, os.Getpid(), RenicePriority)
 
 	Logger.Println("Starting docker daemon...")
 	StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath)

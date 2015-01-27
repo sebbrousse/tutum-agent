@@ -26,7 +26,7 @@ func HandleSig() {
 					ScheduleToTerminateDocker = true
 					DockerProcess.Signal(syscall.SIGTERM)
 				}
-				syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
+				syscall.Kill(os.Getpid(), syscall.SIGTERM)
 			} else {
 				go func() {
 					for {

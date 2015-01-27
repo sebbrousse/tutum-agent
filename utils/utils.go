@@ -2,7 +2,6 @@ package utils
 
 import (
 	"os"
-	"os/exec"
 	"strings"
 )
 
@@ -33,12 +32,4 @@ func JoinURL(url1 string, url2 string) (url string) {
 		url = url + "/"
 	}
 	return
-}
-
-func AsynchronizedRun(cmd string) error {
-	command := exec.Command("sh", "-c", cmd)
-	if err := command.Start(); err != nil {
-		return err
-	}
-	return command.Wait()
 }
