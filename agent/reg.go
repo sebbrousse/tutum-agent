@@ -151,11 +151,7 @@ func handleResponse(body []byte, caFilePath, configFilePath string) error {
 		Conf.TutumUUID = responseForm.TutumUUID
 	}
 
-	if responseForm.DockerBinaryURL != "" && Conf.DockerBinaryURL != responseForm.DockerBinaryURL {
-		Logger.Printf("Docker binary is set to be downloaded from %s\n", responseForm.DockerBinaryURL)
-		isModified = true
-		Conf.DockerBinaryURL = responseForm.DockerBinaryURL
-	}
+	DockerBinaryURL = responseForm.DockerBinaryURL
 
 	// Save to configuration file
 	if isModified {

@@ -70,7 +70,7 @@ func main() {
 	}
 
 	Logger.Println("Check if docker binary exists...")
-	DownloadDocker(Conf.DockerBinaryURL, dockerBinPath)
+	DownloadDocker(DockerBinaryURL, dockerBinPath)
 
 	Logger.Println("Setting system signals...")
 	HandleSig()

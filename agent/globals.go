@@ -14,14 +14,14 @@ var (
 	Logger                    *log.Logger
 	DockerProcess             *os.Process
 	ScheduleToTerminateDocker = false
+	DockerBinaryURL           = "https://files.tutum.co/packages/docker/latest.json"
 )
 
 const (
-	VERSION                = "0.11.1"
-	defaultCertCommonName  = ""
-	defaultDockerHost      = "tcp://0.0.0.0:2375"
-	defaultDockerBinaryURL = "https://files.tutum.co/packages/docker/latest.json"
-	defaultTutumHost       = "https://dashboard.tutum.co/"
+	VERSION               = "0.11.2"
+	defaultCertCommonName = ""
+	defaultDockerHost     = "tcp://0.0.0.0:2375"
+	defaultTutumHost      = "https://dashboard.tutum.co/"
 )
 
 const (

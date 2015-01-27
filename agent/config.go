@@ -11,12 +11,11 @@ import (
 )
 
 type Configuration struct {
-	CertCommonName  string
-	DockerBinaryURL string
-	DockerHost      string
-	TutumHost       string
-	TutumToken      string
-	TutumUUID       string
+	CertCommonName string
+	DockerHost     string
+	TutumHost      string
+	TutumToken     string
+	TutumUUID      string
 }
 
 func ParseFlag() {
@@ -27,7 +26,6 @@ func ParseFlag() {
 		flag.PrintDefaults()
 		fmt.Fprint(os.Stderr, "   set: Set items in the config file and exit, supported items\n",
 			"          CertCommonName=\"xxx\"\n",
-			"          DockerBinaryURL=\"xxx\"\n",
 			"          DockerHost=\"xxx\"\n",
 			"          TutumHost=\"xxx\"\n",
 			"          TutumToken=\"xxx\"\n",
@@ -61,8 +59,6 @@ func SetConfigFile(configFilePath string) {
 				value := strings.Trim(strings.TrimSpace(keyValue[1]), "\"'")
 				if strings.ToLower(key) == strings.ToLower("CertCommonName") {
 					Conf.CertCommonName = value
-				} else if strings.ToLower(key) == strings.ToLower("DockerBinaryURL") {
-					Conf.DockerBinaryURL = value
 				} else if strings.ToLower(key) == strings.ToLower("DockerHost") {
 					Conf.DockerHost = value
 				} else if strings.ToLower(key) == strings.ToLower("TutumHost") {
@@ -100,12 +96,10 @@ func LoadConf(configFile string) (*Configuration, error) {
 	if err != nil {
 		return nil, err
 	}
-	if conf.DockerBinaryURL == "" {
-		conf.DockerBinaryURL = defaultDockerBinaryURL
-	}
 	if conf.DockerHost == "" {
 		conf.DockerHost = defaultDockerHost
 	}
+
 	if conf.TutumHost == "" {
 		conf.TutumHost = defaultTutumHost
 	}
@@ -130,9 +124,6 @@ func SaveConf(configFile string, conf Configuration) error {
 func LoadDefaultConf() {
 	if Conf.CertCommonName == "" {
 		Conf.CertCommonName = defaultCertCommonName
-	}
-	if Conf.DockerBinaryURL == "" {
-		Conf.DockerBinaryURL = defaultDockerBinaryURL
 	}
 	if Conf.DockerHost == "" {
 		Conf.DockerHost = defaultDockerHost
