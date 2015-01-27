@@ -118,4 +118,21 @@ func PrepareFiles(configFilePath, dockerBinPath, keyFilePath, certFilePath strin
 	} else {
 		Conf = *conf
 	}
+
+	if *FlagDockerHost != "" {
+		Logger.Printf("Override 'DockerHost' from command line flag: %s\n", *FlagDockerHost)
+		Conf.DockerHost = *FlagDockerHost
+	}
+	if *FlagTutumHost != "" {
+		Logger.Printf("Override 'TutumHost' from command line flag: %s\n", *FlagTutumHost)
+		Conf.TutumHost = *FlagTutumHost
+	}
+	if *FlagTutumToken != "" {
+		Logger.Printf("Override 'TutumToken' from command line flag: %s\n", *FlagTutumToken)
+		Conf.TutumToken = *FlagTutumToken
+	}
+	if *FlagTutumUUID != "" {
+		Logger.Printf("Override 'TutumUUID' from command line flag: %s\n", *FlagTutumUUID)
+		Conf.TutumUUID = *FlagTutumUUID
+	}
 }

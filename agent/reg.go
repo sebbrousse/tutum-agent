@@ -88,7 +88,7 @@ func sendRegRequest(url, method, token, uuid string, data []byte) ([]byte, error
 	}
 	req.Header.Add("Authorization", "TutumAgentToken "+token)
 	req.Header.Add("Content-Type", "application/json")
-	if *DebugMode {
+	if *FlagDebugMode {
 		Logger.Println("=======Request Info ======")
 		Logger.Println("=> URL:", utils.JoinURL(url, uuid))
 		Logger.Println("=> Method:", method)
@@ -109,7 +109,7 @@ func sendRegRequest(url, method, token, uuid string, data []byte) ([]byte, error
 			return nil, err
 		}
 
-		if *DebugMode {
+		if *FlagDebugMode {
 			Logger.Println("=======Response Info ======")
 			Logger.Println("=> Headers:", resp.Header)
 			Logger.Println("=> Body:", string(body))
@@ -118,7 +118,7 @@ func sendRegRequest(url, method, token, uuid string, data []byte) ([]byte, error
 	case 404:
 		return nil, errors.New("Error 404")
 	default:
-		if *DebugMode {
+		if *FlagDebugMode {
 			Logger.Println("=======Response Info (ERROR) ======")
 			Logger.Println("=> Headers:", resp.Header)
 			b, _ := ioutil.ReadAll(resp.Body)

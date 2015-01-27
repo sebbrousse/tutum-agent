@@ -19,8 +19,13 @@ type Configuration struct {
 }
 
 func ParseFlag() {
-	DebugMode = flag.Bool("debug", false, "Enable debug mode")
-	LogToStdout = flag.Bool("stdout", false, "Print log to stdout")
+	FlagDebugMode = flag.Bool("debug", false, "Enable debug mode")
+	FlagLogToStdout = flag.Bool("stdout", false, "Print log to stdout")
+	FlagDockerHost = flag.String("docker-host", "", "Override 'DockerHost'")
+	FlagTutumHost = flag.String("tutum-host", "", "Override 'TutumHost'")
+	FlagTutumToken = flag.String("tutum-token", "", "Override 'TutumToken'")
+	FlagTutumUUID = flag.String("tutum-uuid", "", "Override 'TutumUUID'")
+
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
 		flag.PrintDefaults()
@@ -134,7 +139,7 @@ func LoadDefaultConf() {
 }
 
 func SetLogger(logFile string) {
-	if *LogToStdout {
+	if *FlagLogToStdout {
 		Logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
 		Logger.Println("Set logger to stdout")
 

@@ -6,9 +6,12 @@ import (
 )
 
 var (
-	DebugMode   *bool
-	LogToStdout *bool
-	TutumToken  *string
+	FlagDebugMode   *bool
+	FlagLogToStdout *bool
+	FlagDockerHost  *string
+	FlagTutumHost   *string
+	FlagTutumToken  *string
+	FlagTutumUUID   *string
 
 	Conf                      Configuration
 	Logger                    *log.Logger
