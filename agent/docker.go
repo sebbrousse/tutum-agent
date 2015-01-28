@@ -17,6 +17,8 @@ import (
 	"syscall"
 	"time"
 
+	"code.google.com/p/go-shlex"
+
 	"github.com/tutumcloud/tutum-agent/utils"
 )
 
@@ -42,7 +44,11 @@ func StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath string) {
 	if *FlagDockerOpts != "" {
 		cmdstring = cmdstring + " " + *FlagDockerOpts
 	}
-	cmdslice := strings.Split(cmdstring, " ")
+
+	cmdslice, err := shlex.Split(cmdstring)
+	if err != nil {
+		cmdslice = strings.Split(cmdstring, " ")
+	}
 
 	command = exec.Command(dockerBinPath, cmdslice...)
 
