@@ -22,16 +22,14 @@ echo deb [arch=amd64] https://$S3_BUCKET/ubuntu/ tutum main > /etc/apt/sources.l
 apt-get update -qq -o Dir::Etc::sourceparts="/dev/null" -o APT::List-Cleanup=0 -o Dir::Etc::sourcelist="sources.list.d/tutum.list" && apt-get install -yq tutum-agent > /dev/null
 echo "-> Configuring tutum-agent..."
 mkdir -p /etc/tutum/agent
-tutum-agent set TutumHost="$TUTUM_HOST" > /dev/null
-if [ $# -gt 0 ]; then
-	tutum-agent set TutumToken="$1" > /dev/null
-fi
-if [ $# -gt 1 ]; then
-	tutum-agent set TutumUUID="$2" > /dev/null
-fi
-if [ $# -gt 2 ]; then
-	tutum-agent set CertCommonName="$3" > /dev/null
-fi
+cat > /etc/tutum/agent/tutum-agent.conf <<EOF
+{
+    "TutumHost":"${TUTUM_HOST}",
+    "TutumToken":"${1}",
+    "TutumUUID":"${2}",
+    "CertCommonName":"${3}"
+}
+EOF
 service tutum-agent restart > /dev/null 2>&1
 echo "-> Done!"
 cat <<EOF
