@@ -7,21 +7,15 @@ import (
 	"time"
 )
 
-var DockerProcess *os.Process
-var c chan os.Signal
-
 func HandleSig() {
-	c = make(chan os.Signal, 1)
+	c := make(chan os.Signal, 1)
 
-	SetHandler()
+	signal.Notify(c, os.Interrupt, os.Kill, syscall.SIGTERM)
 	go func() {
 		for {
 			s := <-c
 			Logger.Println("Got signal:", s)
-			if s == syscall.SIGCHLD {
-				Logger.Println("Docker deamon has died")
-				DockerProcess = nil
-			} else if s == os.Interrupt {
+			if s == os.Interrupt {
 				Logger.Println("User interrupt")
 				if DockerProcess == nil {
 					Logger.Println("Docker daemon is not running")
@@ -29,9 +23,10 @@ func HandleSig() {
 				} else {
 					Logger.Println("Docker daemon is running")
 					Logger.Println("Start to shut down docker daemon gracefully")
+					ScheduleToTerminateDocker = true
 					DockerProcess.Signal(syscall.SIGTERM)
 				}
-				syscall.Kill(syscall.Getpid(), syscall.SIGTERM)
+				syscall.Kill(os.Getpid(), syscall.SIGTERM)
 			} else {
 				go func() {
 					for {
@@ -46,12 +41,4 @@ func HandleSig() {
 			}
 		}
 	}()
-}
-
-func SetHandler() {
-	signal.Notify(c, os.Interrupt, os.Kill, syscall.SIGTERM, syscall.SIGCHLD)
-}
-
-func UnsetHandler() {
-	signal.Stop(c)
 }

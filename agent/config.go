@@ -10,63 +10,29 @@ import (
 	"strings"
 )
 
-var (
-	DebugMode   *bool
-	LogToStdout *bool
-	TutumToken  *string
-
-	Conf   Configuration
-	Logger *log.Logger
-)
-
-const (
-	VERSION                = "0.11.2"
-	defaultCertCommonName  = ""
-	defaultDockerHost      = "tcp://0.0.0.0:2375"
-	defaultDockerBinaryURL = "https://files.tutum.co/packages/docker/latest.json"
-	defaultTutumHost       = "https://dashboard.tutum.co/"
-)
-
-const (
-	TutumHome = "/etc/tutum/agent"
-	DockerDir = "/usr/lib/tutum"
-	LogDir    = "/var/log/tutum"
-
-	DockerLogFileName      = "docker.log"
-	TutumLogFileName       = "agent.log"
-	KeyFileName            = "key.pem"
-	CertFileName           = "cert.pem"
-	CAFileName             = "ca.pem"
-	ConfigFileName         = "tutum-agent.conf"
-	DockerBinaryName       = "docker"
-	DockerNewBinaryName    = "docker.new"
-	DockerNewBinarySigName = "docker.new.sig"
-
-	RegEndpoint       = "api/agent/node/"
-	DockerDefaultHost = "unix:///var/run/docker.sock"
-
-	MaxWaitingTime    = 200 //seconds
-	HeartBeatInterval = 5   //second
-)
-
 type Configuration struct {
-	CertCommonName  string
-	DockerBinaryURL string
-	DockerHost      string
-	TutumHost       string
-	TutumToken      string
-	TutumUUID       string
+	CertCommonName string
+	DockerHost     string
+	TutumHost      string
+	TutumToken     string
+	TutumUUID      string
 }
 
 func ParseFlag() {
-	DebugMode = flag.Bool("debug", false, "Enable debug mode")
-	LogToStdout = flag.Bool("stdout", false, "Print log to stdout")
+	FlagDebugMode = flag.Bool("debug", false, "Enable debug mode")
+	FlagLogToStdout = flag.Bool("stdout", false, "Print log to stdout")
+	FlagStandalone = flag.Bool("standalone", false, "Standalone mode, skipping reg with tutum")
+	FlagDockerHost = flag.String("docker-host", "", "Override 'DockerHost'")
+	FlagDockerOpts = flag.String("docker-opts", "", "Add additional flags to run docker daemon")
+	FlagTutumHost = flag.String("tutum-host", "", "Override 'TutumHost'")
+	FlagTutumToken = flag.String("tutum-token", "", "Override 'TutumToken'")
+	FlagTutumUUID = flag.String("tutum-uuid", "", "Override 'TutumUUID'")
+
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
 		flag.PrintDefaults()
 		fmt.Fprint(os.Stderr, "   set: Set items in the config file and exit, supported items\n",
 			"          CertCommonName=\"xxx\"\n",
-			"          DockerBinaryURL=\"xxx\"\n",
 			"          DockerHost=\"xxx\"\n",
 			"          TutumHost=\"xxx\"\n",
 			"          TutumToken=\"xxx\"\n",
@@ -100,8 +66,6 @@ func SetConfigFile(configFilePath string) {
 				value := strings.Trim(strings.TrimSpace(keyValue[1]), "\"'")
 				if strings.ToLower(key) == strings.ToLower("CertCommonName") {
 					Conf.CertCommonName = value
-				} else if strings.ToLower(key) == strings.ToLower("DockerBinaryURL") {
-					Conf.DockerBinaryURL = value
 				} else if strings.ToLower(key) == strings.ToLower("DockerHost") {
 					Conf.DockerHost = value
 				} else if strings.ToLower(key) == strings.ToLower("TutumHost") {
@@ -139,12 +103,10 @@ func LoadConf(configFile string) (*Configuration, error) {
 	if err != nil {
 		return nil, err
 	}
-	if conf.DockerBinaryURL == "" {
-		conf.DockerBinaryURL = defaultDockerBinaryURL
-	}
 	if conf.DockerHost == "" {
 		conf.DockerHost = defaultDockerHost
 	}
+
 	if conf.TutumHost == "" {
 		conf.TutumHost = defaultTutumHost
 	}
@@ -170,9 +132,6 @@ func LoadDefaultConf() {
 	if Conf.CertCommonName == "" {
 		Conf.CertCommonName = defaultCertCommonName
 	}
-	if Conf.DockerBinaryURL == "" {
-		Conf.DockerBinaryURL = defaultDockerBinaryURL
-	}
 	if Conf.DockerHost == "" {
 		Conf.DockerHost = defaultDockerHost
 	}
@@ -182,7 +141,7 @@ func LoadDefaultConf() {
 }
 
 func SetLogger(logFile string) {
-	if *LogToStdout {
+	if *FlagLogToStdout {
 		Logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
 		Logger.Println("Set logger to stdout")
 

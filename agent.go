@@ -4,6 +4,7 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"syscall"
 	"time"
 
 	. "github.com/tutumcloud/tutum-agent/agent"
@@ -33,21 +34,61 @@ func main() {
 
 	url := utils.JoinURL(Conf.TutumHost, RegEndpoint)
 	if Conf.TutumUUID == "" {
-		Logger.Printf("Registering in Tutum via POST: %s ...\n", url)
-		PostToTutum(url, caFilePath, configFilePath)
+		Logger.Printf("Removing all existing cert and key files %s\n", url)
+		os.RemoveAll(keyFilePath)
+		os.RemoveAll(certFilePath)
+		os.RemoveAll(caFilePath)
+
+		if !*FlagStandalone {
+			Logger.Printf("Registering in Tutum via POST: %s ...\n", url)
+			PostToTutum(url, caFilePath, configFilePath)
+		}
 	}
 
 	Logger.Println("Checking if TLS certificate exists...")
-	CreateCerts(keyFilePath, certFilePath, Conf.CertCommonName)
+	if *FlagStandalone {
+		commonName := Conf.CertCommonName
+		if commonName == "" {
+			commonName = "*"
+		}
+		CreateCerts(keyFilePath, certFilePath, commonName)
+	} else {
+		CreateCerts(keyFilePath, certFilePath, Conf.CertCommonName)
+	}
 
-	Logger.Printf("Registering in Tutum via PATCH: %s ...\n", url+Conf.TutumUUID)
-	PatchToTutum(url, caFilePath, certFilePath, configFilePath)
+	if !*FlagStandalone {
+		Logger.Printf("Registering in Tutum via PATCH: %s ...\n", url+Conf.TutumUUID)
+		err := PatchToTutum(url, caFilePath, certFilePath, configFilePath)
+		if err != nil {
+			Logger.Printf("TutumUUID (%s) is invalid, trying to allocate a new one ...\n", Conf.TutumUUID)
+			Logger.Printf("Clearing invalid TutumUUID:%s ...\n", Conf.TutumUUID)
+			Conf.TutumUUID = ""
+			Logger.Print("Saving configuation to file ...")
+			SaveConf(configFilePath, Conf)
 
+			Logger.Printf("Removing all existing cert and key files", url)
+			os.RemoveAll(keyFilePath)
+			os.RemoveAll(certFilePath)
+			os.RemoveAll(caFilePath)
+
+			Logger.Printf("Registering in Tutum via POST: %s ...\n", url)
+			PostToTutum(url, caFilePath, configFilePath)
+
+			Logger.Println("Checking if TLS certificate exists...")
+			CreateCerts(keyFilePath, certFilePath, Conf.CertCommonName)
+
+			Logger.Printf("Registering in Tutum via PATCH: %s ...\n", url+Conf.TutumUUID)
+			PatchToTutum(url, caFilePath, certFilePath, configFilePath)
+		}
+	}
 	Logger.Println("Check if docker binary exists...")
-	DownloadDocker(Conf.DockerBinaryURL, dockerBinPath)
+	DownloadDocker(DockerBinaryURL, dockerBinPath)
 
 	Logger.Println("Setting system signals...")
 	HandleSig()
+
+	Logger.Printf("Renicing tutum agent to priority %d", RenicePriority)
+	syscall.Setpriority(syscall.PRIO_PROCESS, os.Getpid(), RenicePriority)
 
 	Logger.Println("Starting docker daemon...")
 	StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath)
@@ -60,8 +101,8 @@ func main() {
 		// try to restart docker daemon if it dies somehow
 		if DockerProcess == nil {
 			time.Sleep(HeartBeatInterval * time.Second)
-			if DockerProcess == nil {
-				Logger.Println("Docker daemon died somehow, respawning")
+			if DockerProcess == nil && ScheduleToTerminateDocker == false {
+				Logger.Println("Respawning docker daemon")
 				StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath)
 			}
 		}
@@ -91,5 +132,22 @@ func PrepareFiles(configFilePath, dockerBinPath, keyFilePath, certFilePath strin
 		Logger.Fatalln("Failed to load configuration file:", err)
 	} else {
 		Conf = *conf
+	}
+
+	if *FlagDockerHost != "" {
+		Logger.Printf("Override 'DockerHost' from command line flag: %s\n", *FlagDockerHost)
+		Conf.DockerHost = *FlagDockerHost
+	}
+	if *FlagTutumHost != "" {
+		Logger.Printf("Override 'TutumHost' from command line flag: %s\n", *FlagTutumHost)
+		Conf.TutumHost = *FlagTutumHost
+	}
+	if *FlagTutumToken != "" {
+		Logger.Printf("Override 'TutumToken' from command line flag: %s\n", *FlagTutumToken)
+		Conf.TutumToken = *FlagTutumToken
+	}
+	if *FlagTutumUUID != "" {
+		Logger.Printf("Override 'TutumUUID' from command line flag: %s\n", *FlagTutumUUID)
+		Conf.TutumUUID = *FlagTutumUUID
 	}
 }
