@@ -14,6 +14,7 @@ var (
 	FlagTutumHost   *string
 	FlagTutumToken  *string
 	FlagTutumUUID   *string
+	FlagNgrokToken  *string
 
 	Conf                      Configuration
 	Logger                    *log.Logger
@@ -44,6 +45,9 @@ const (
 	DockerBinaryName       = "docker"
 	DockerNewBinaryName    = "docker.new"
 	DockerNewBinarySigName = "docker.new.sig"
+	NgrokBinaryName        = "ngrok"
+	NgrokLogName           = "ngrok.log"
+	NgrokConfName          = "ngrok.conf"
 
 	RegEndpoint       = "api/agent/node/"
 	DockerDefaultHost = "unix:///var/run/docker.sock"

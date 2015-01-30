@@ -23,6 +23,8 @@ func main() {
 	keyFilePath := path.Join(TutumHome, KeyFileName)
 	certFilePath := path.Join(TutumHome, CertFileName)
 	caFilePath := path.Join(TutumHome, CAFileName)
+	ngrokPath := path.Join(DockerDir, NgrokBinaryName)
+	ngrokLogPath := path.Join(LogDir, NgrokLogName)
 
 	ParseFlag()
 	SetLogger(path.Join(LogDir, TutumLogFileName))
@@ -92,6 +94,10 @@ func main() {
 
 	Logger.Println("Starting docker daemon...")
 	StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath)
+
+	if !*FlagStandalone {
+		StartNatTunneling(url, ngrokPath, ngrokLogPath)
+	}
 
 	Logger.Println("Docker server started. Entering maintenance loop")
 	for {
