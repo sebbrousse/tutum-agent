@@ -21,37 +21,6 @@ type TunnelPatchForm struct {
 	Version string `json:"agent_version"`
 }
 
-func startNatTunnel(url, ngrokPath, ngrokLogPath string) {
-	if !utils.FileExist(ngrokPath) {
-		Logger.Printf("Cannot find ngrok binary(%s), skip tunneling\n", ngrokPath)
-		return
-	}
-
-	var commandStr string
-	if *FlagNgrokToken != "" {
-		Logger.Println("About to tunnel to public ngrok service")
-		commandStr = fmt.Sprintf("%s -log stdout -authtoken %s -proto tcp %d > %s",
-			ngrokPath, *FlagNgrokToken, DockerHostPort, ngrokLogPath)
-	} else {
-		Logger.Println("About to tunnel to private ngrok service")
-		confPath := path.Join(TutumHome, NgrokConfName)
-		if !utils.FileExist(confPath) {
-			Logger.Println("Cannot find ngrok conf, skip tunneling")
-			return
-		}
-		commandStr = fmt.Sprintf("%s -log stdout -proto tcp %d > %s",
-			ngrokPath, DockerHostPort, ngrokLogPath)
-	}
-
-	os.RemoveAll(ngrokLogPath)
-	Logger.Println("Starting tunneling:", commandStr)
-
-	command := exec.Command("/bin/sh", "-c", commandStr)
-	go runGronk(command)
-	Logger.Println("Starting montoring tunnel:", commandStr)
-	monitorTunnels(url, ngrokLogPath)
-}
-
 func runGronk(command *exec.Cmd) bool {
 	if err := command.Start(); err != nil {
 		return true
@@ -144,9 +113,8 @@ func NatTunnel(url, ngrokPath, ngrokLogPath string) {
 	}
 
 	Logger.Printf("Testing if port %d is publicly reachable ...\n", DockerHostPort)
-	commandStr := fmt.Sprintf("nc %s %d < /dev/null", Conf.CertCommonName, DockerHostPort)
-	Logger.Println(commandStr)
-	command := exec.Command("/bin/sh", "-c", commandStr)
+	cmdStr := fmt.Sprintf("nc %s %d < /dev/null", Conf.CertCommonName, DockerHostPort)
+	command := exec.Command("/bin/sh", "-c", cmdStr)
 	command.Start()
 	if err := command.Wait(); err != nil {
 		Logger.Printf("Port %d is not publicly reachable, NAT tunne is needed", DockerHostPort)
@@ -155,5 +123,35 @@ func NatTunnel(url, ngrokPath, ngrokLogPath string) {
 		return
 	}
 
-	startNatTunnel(url, ngrokPath, ngrokLogPath)
+	if !utils.FileExist(ngrokPath) {
+		Logger.Printf("Cannot find ngrok binary(%s), skipping NAT tunnel\n", ngrokPath)
+		return
+	}
+
+	var commandStr string
+	if *FlagNgrokToken != "" {
+		Logger.Println("About to tunnel to public ngrok service")
+		commandStr = fmt.Sprintf("%s -log stdout -authtoken %s -proto tcp %d > %s",
+			ngrokPath, *FlagNgrokToken, DockerHostPort, ngrokLogPath)
+	} else {
+		Logger.Println("About to tunnel to private ngrok service")
+		confPath := path.Join(TutumHome, NgrokConfName)
+		if !utils.FileExist(confPath) {
+			Logger.Println("Cannot find ngrok conf, skipping NAT tunnel")
+			return
+		}
+		commandStr = fmt.Sprintf("%s -log stdout -proto tcp %d > %s",
+			ngrokPath, DockerHostPort, ngrokLogPath)
+	}
+
+	os.RemoveAll(ngrokLogPath)
+	Logger.Println("Starting montoring tunnel:", commandStr)
+	go monitorTunnels(url, ngrokLogPath)
+	Logger.Println("Starting NAT tunnel:", commandStr)
+
+	for {
+		command := exec.Command("/bin/sh", "-c", commandStr)
+		runGronk(command)
+		Logger.Println("Restarting NAT tunnel:", commandStr)
+	}
 }
