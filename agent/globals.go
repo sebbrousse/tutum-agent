@@ -56,4 +56,6 @@ const (
 	HeartBeatInterval = 5   //second
 
 	RenicePriority = -10
+
+	DockerHostPort = 2375
 )

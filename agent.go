@@ -89,14 +89,15 @@ func main() {
 	Logger.Println("Setting system signals...")
 	HandleSig()
 
-	Logger.Printf("Renicing tutum agent to priority %d", RenicePriority)
+	Logger.Printf("Renicing tutum agent to priority %d\n", RenicePriority)
 	syscall.Setpriority(syscall.PRIO_PROCESS, os.Getpid(), RenicePriority)
 
 	Logger.Println("Starting docker daemon...")
 	StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath)
 
 	if !*FlagStandalone {
-		StartNatTunneling(url, ngrokPath, ngrokLogPath)
+		Logger.Println("Loading NAT tunneling module ...")
+		go NatTunnel(url, ngrokPath, ngrokLogPath)
 	}
 
 	Logger.Println("Docker server started. Entering maintenance loop")
