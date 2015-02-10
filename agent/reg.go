@@ -1,12 +1,10 @@
 package agent
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"time"
 
@@ -72,60 +70,19 @@ func Register(url, method, token, uuid, caFilePath, configFilePath string, data 
 				return nil
 			}
 		}
-		if err.Error() == "Error 404" {
+		if err.Error() == "Status: 404" {
 			return err
 		}
-		Logger.Printf("Registration failed: %s. Retry in %d seconds\n", err.Error(), i)
+		Logger.Printf("Registration failed, %s. Retry in %d seconds\n", err.Error(), i)
 		time.Sleep(time.Duration(i) * time.Second)
 	}
 }
 
 func sendRegRequest(url, method, token, uuid string, data []byte) ([]byte, error) {
-	client := &http.Client{}
-	req, err := http.NewRequest(method, utils.JoinURL(url, uuid), bytes.NewReader(data))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("Authorization", "TutumAgentToken "+token)
-	req.Header.Add("Content-Type", "application/json")
-	if *FlagDebugMode {
-		Logger.Println("=======Request Info ======")
-		Logger.Println("=> URL:", utils.JoinURL(url, uuid))
-		Logger.Println("=> Method:", method)
-		Logger.Println("=> Headers:", req.Header)
-		Logger.Println("=> Body:", string(data))
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+	headers := []string{"Authorization TutumAgentToken " + token,
+		"Content-Type application/json"}
+	return SendRequest(method, utils.JoinURL(url, uuid), data, headers)
 
-	switch resp.StatusCode {
-	case 200, 201, 202:
-		Logger.Println(resp.Status)
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-
-		if *FlagDebugMode {
-			Logger.Println("=======Response Info ======")
-			Logger.Println("=> Headers:", resp.Header)
-			Logger.Println("=> Body:", string(body))
-		}
-		return body, nil
-	case 404:
-		return nil, errors.New("Error 404")
-	default:
-		if *FlagDebugMode {
-			Logger.Println("=======Response Info (ERROR) ======")
-			Logger.Println("=> Headers:", resp.Header)
-			b, _ := ioutil.ReadAll(resp.Body)
-			Logger.Println("=> Body:", string(b))
-		}
-		return nil, errors.New(resp.Status)
-	}
 }
 
 func handleResponse(body []byte, caFilePath, configFilePath string) error {

@@ -1,11 +1,8 @@
 package agent
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -53,47 +50,9 @@ func patchTunnelToTutum(url, tunnel string) {
 		Logger.Printf("Cannot marshal the TunnelPatch form:%s\f", err)
 	}
 
-	client := &http.Client{}
-	req, err := http.NewRequest("PATCH", utils.JoinURL(url, Conf.TutumUUID), bytes.NewReader(data))
-	if err != nil {
-		Logger.Println(err)
-	}
-	req.Header.Add("Authorization", "TutumAgentToken "+Conf.TutumToken)
-	req.Header.Add("Content-Type", "application/json")
-	if *FlagDebugMode {
-		Logger.Println("=======Request Info ======")
-		Logger.Println("=> URL:", utils.JoinURL(url, Conf.TutumUUID))
-		Logger.Println("=> Method:", "PATCH")
-		Logger.Println("=> Headers:", req.Header)
-		Logger.Println("=> Body:", string(data))
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		Logger.Println(err)
-	}
-	defer resp.Body.Close()
-
-	switch resp.StatusCode {
-	case 200, 201, 202:
-		Logger.Println(resp.Status)
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			Logger.Println(err)
-		}
-		if *FlagDebugMode {
-			Logger.Println("=======Response Info ======")
-			Logger.Println("=> Headers:", resp.Header)
-			Logger.Println("=> Body:", string(body))
-		}
-	default:
-		if *FlagDebugMode {
-			Logger.Println("=======Response Info (ERROR) ======")
-			Logger.Println("=> Headers:", resp.Header)
-			b, _ := ioutil.ReadAll(resp.Body)
-			Logger.Println("=> Body:", string(b))
-		}
-		Logger.Println(resp.Status)
-	}
+	headers := []string{"Authorization TutumAgentToken " + Conf.TutumToken,
+		"Content-Type", "application/json"}
+	SendRequest("PATCH", utils.JoinURL(url, Conf.TutumUUID), data, headers)
 	Logger.Println("Patching tunnel address to Tutum is finished")
 }
 
