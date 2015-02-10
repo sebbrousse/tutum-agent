@@ -13,8 +13,6 @@ import (
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/tutumcloud/tutum-agent/utils"
 )
 
 type TargetDef struct {
@@ -39,7 +37,6 @@ func SendRequest(method, url string, data_bytes []byte, headers []string) ([]byt
 	}
 	if headers != nil {
 		for _, header := range headers {
-			fmt.Println(header)
 			terms := strings.SplitN(header, " ", 2)
 			if len(terms) == 2 {
 				req.Header.Add(terms[0], terms[1])
@@ -87,23 +84,21 @@ func SendRequest(method, url string, data_bytes []byte, headers []string) ([]byt
 	}
 }
 
-func DownloadDocker(url, dockerBinPath string) {
-	if utils.FileExist(dockerBinPath) {
-		Logger.Printf("Found docker locally(%s), skip downloading\n", dockerBinPath)
-	} else {
-		Logger.Println("No docker binary is found locally. Starting to download docker...")
-		downloadFile(url, dockerBinPath, "docker")
+func HttpGet(url string) ([]byte, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
 	}
-	createDockerSymlink(dockerBinPath, DockerSymbolicLink)
-}
+	defer resp.Body.Close()
 
-func DownloadNgrok(url, ngrokBinPath string) {
-	if utils.FileExist(ngrokBinPath) {
-		Logger.Printf("Found ngrok locally(%s), skip downloading\n", ngrokBinPath)
-	} else {
-		Logger.Println("No ngrok binary is found locally. Starting to download ngrok...")
-		downloadFile(url, ngrokBinPath, "gnrok")
+	if resp.StatusCode >= 400 {
+		return nil, errors.New(resp.Status)
 	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
 }
 
 func downloadFile(url, path, name string) {
@@ -227,21 +222,4 @@ func writeToFile(binary []byte, path string) {
 			break
 		}
 	}
-}
-
-func HttpGet(url string) ([]byte, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		return nil, errors.New(resp.Status)
-	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	return body, nil
 }

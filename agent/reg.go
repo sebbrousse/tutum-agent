@@ -11,24 +11,25 @@ import (
 	"github.com/tutumcloud/tutum-agent/utils"
 )
 
-type ResponseForm struct {
+type RegResponseForm struct {
 	UserCaCert      string `json:"user_ca_cert"`
 	TutumUUID       string `json:"uuid"`
 	CertCommonName  string `json:"external_fqdn"`
 	DockerBinaryURL string `json:"docker_url"`
+	NgrokBinaryURL  string `json:"ngrok_url"`
 }
 
-type PostForm struct {
+type RegPostForm struct {
 	Version string `json:"agent_version"`
 }
 
-type PatchForm struct {
+type RegPatchForm struct {
 	Public_cert string `json:"public_cert"`
 	Version     string `json:"agent_version"`
 }
 
 func PostToTutum(url, caFilePath, configFilePath string) error {
-	form := PostForm{}
+	form := RegPostForm{}
 	form.Version = VERSION
 	data, err := json.Marshal(form)
 	if err != nil {
@@ -38,7 +39,7 @@ func PostToTutum(url, caFilePath, configFilePath string) error {
 }
 
 func PatchToTutum(url, caFilePath, certFilePath, configFilePath string) error {
-	form := PatchForm{}
+	form := RegPatchForm{}
 	form.Version = VERSION
 	cert, err := GetCertificate(certFilePath)
 	if err != nil {
@@ -66,7 +67,7 @@ func Register(url, method, token, uuid, caFilePath, configFilePath string, data 
 		}
 		body, err := sendRegRequest(url, method, token, uuid, data)
 		if err == nil {
-			if err = handleResponse(body, caFilePath, configFilePath); err == nil {
+			if err = handleRegResponse(body, caFilePath, configFilePath); err == nil {
 				return nil
 			}
 		}
@@ -85,8 +86,8 @@ func sendRegRequest(url, method, token, uuid string, data []byte) ([]byte, error
 
 }
 
-func handleResponse(body []byte, caFilePath, configFilePath string) error {
-	var responseForm ResponseForm
+func handleRegResponse(body []byte, caFilePath, configFilePath string) error {
+	var responseForm RegResponseForm
 
 	// Save ca cert file
 	if err := json.Unmarshal(body, &responseForm); err != nil {
@@ -110,6 +111,9 @@ func handleResponse(body []byte, caFilePath, configFilePath string) error {
 
 	DockerBinaryURL = responseForm.DockerBinaryURL
 
+	if responseForm.NgrokBinaryURL != "" {
+		NgrokBianryURL = responseForm.NgrokBinaryURL
+	}
 	// Save to configuration file
 	if isModified {
 		Logger.Println("Updating configraution file ...")

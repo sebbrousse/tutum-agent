@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"path"
 	"strings"
-	"time"
 
 	"github.com/ActiveState/tail"
 	"github.com/tutumcloud/tutum-agent/utils"
@@ -16,6 +15,40 @@ import (
 type TunnelPatchForm struct {
 	Tunnel  string `json:"tunnel:"`
 	Version string `json:"agent_version"`
+}
+
+func NatTunnel(url, ngrokPath, ngrokLogPath string) {
+	if !utils.FileExist(ngrokPath) {
+		Logger.Printf("Cannot find ngrok binary(%s), skipping NAT tunnel\n", ngrokPath)
+		return
+	}
+
+	var commandStr string
+	if *FlagNgrokToken != "" {
+		Logger.Println("About to tunnel to public ngrok service")
+		commandStr = fmt.Sprintf("%s -log stdout -authtoken %s -proto tcp %d > %s",
+			ngrokPath, *FlagNgrokToken, DockerHostPort, ngrokLogPath)
+	} else {
+		Logger.Println("About to tunnel to private ngrok service")
+		confPath := path.Join(TutumHome, NgrokConfName)
+		if !utils.FileExist(confPath) {
+			Logger.Println("Cannot find ngrok conf, skipping NAT tunnel")
+			return
+		}
+		commandStr = fmt.Sprintf("%s -config=%s -log stdout -proto tcp %d > %s",
+			ngrokPath, confPath, DockerHostPort, ngrokLogPath)
+	}
+
+	os.RemoveAll(ngrokLogPath)
+	Logger.Println("Starting montoring tunnel:", commandStr)
+	go monitorTunnels(url, ngrokLogPath)
+	Logger.Println("Starting NAT tunnel:", commandStr)
+
+	for {
+		command := exec.Command("/bin/sh", "-c", commandStr)
+		runGronk(command)
+		Logger.Println("Restarting NAT tunnel:", commandStr)
+	}
 }
 
 func runGronk(command *exec.Cmd) bool {
@@ -52,65 +85,19 @@ func patchTunnelToTutum(url, tunnel string) {
 
 	headers := []string{"Authorization TutumAgentToken " + Conf.TutumToken,
 		"Content-Type", "application/json"}
-	SendRequest("PATCH", utils.JoinURL(url, Conf.TutumUUID), data, headers)
-	Logger.Println("Patching tunnel address to Tutum is finished")
+	_, err = SendRequest("PATCH", utils.JoinURL(url, Conf.TutumUUID), data, headers)
+	if err != nil {
+		Logger.Println("Failed to patch tunnel address to Tutum,", err.Error())
+	} else {
+		Logger.Println("Successfully Patched tunnel address to Tutum")
+	}
 }
 
-func NatTunnel(url, ngrokPath, ngrokLogPath string) {
-	counter := 0
-	for {
-		if counter > 10 {
-			break
-		}
-		if DockerProcess == nil {
-			time.Sleep(2 * time.Second)
-			counter += 1
-
-		} else {
-			break
-		}
-	}
-
-	Logger.Printf("Testing if port %d is publicly reachable ...\n", DockerHostPort)
-	cmdStr := fmt.Sprintf("nc %s %d < /dev/null", Conf.CertCommonName, DockerHostPort)
-	command := exec.Command("/bin/sh", "-c", cmdStr)
-	command.Start()
-	if err := command.Wait(); err != nil {
-		Logger.Printf("Port %d is not publicly reachable, NAT tunne is needed", DockerHostPort)
+func DownloadNgrok(url, ngrokBinPath string) {
+	if utils.FileExist(ngrokBinPath) {
+		Logger.Printf("Found ngrok locally(%s), skip downloading\n", ngrokBinPath)
 	} else {
-		Logger.Printf("Port %d is publicly reachable, NAT tunnel is not needed", DockerHostPort)
-		return
-	}
-
-	if !utils.FileExist(ngrokPath) {
-		Logger.Printf("Cannot find ngrok binary(%s), skipping NAT tunnel\n", ngrokPath)
-		return
-	}
-
-	var commandStr string
-	if *FlagNgrokToken != "" {
-		Logger.Println("About to tunnel to public ngrok service")
-		commandStr = fmt.Sprintf("%s -log stdout -authtoken %s -proto tcp %d > %s",
-			ngrokPath, *FlagNgrokToken, DockerHostPort, ngrokLogPath)
-	} else {
-		Logger.Println("About to tunnel to private ngrok service")
-		confPath := path.Join(TutumHome, NgrokConfName)
-		if !utils.FileExist(confPath) {
-			Logger.Println("Cannot find ngrok conf, skipping NAT tunnel")
-			return
-		}
-		commandStr = fmt.Sprintf("%s -log stdout -proto tcp %d > %s",
-			ngrokPath, DockerHostPort, ngrokLogPath)
-	}
-
-	os.RemoveAll(ngrokLogPath)
-	Logger.Println("Starting montoring tunnel:", commandStr)
-	go monitorTunnels(url, ngrokLogPath)
-	Logger.Println("Starting NAT tunnel:", commandStr)
-
-	for {
-		command := exec.Command("/bin/sh", "-c", commandStr)
-		runGronk(command)
-		Logger.Println("Restarting NAT tunnel:", commandStr)
+		Logger.Println("No ngrok binary is found locally. Starting to download ngrok...")
+		downloadFile(url, ngrokBinPath, "gnrok")
 	}
 }

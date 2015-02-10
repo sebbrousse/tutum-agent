@@ -15,6 +15,16 @@ import (
 	"github.com/tutumcloud/tutum-agent/utils"
 )
 
+func DownloadDocker(url, dockerBinPath string) {
+	if utils.FileExist(dockerBinPath) {
+		Logger.Printf("Found docker locally(%s), skip downloading\n", dockerBinPath)
+	} else {
+		Logger.Println("No docker binary is found locally. Starting to download docker...")
+		downloadFile(url, dockerBinPath, "docker")
+	}
+	createDockerSymlink(dockerBinPath, DockerSymbolicLink)
+}
+
 func StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath string) {
 	var command *exec.Cmd
 
