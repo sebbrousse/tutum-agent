@@ -2,6 +2,8 @@ package agent
 
 import (
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
@@ -22,6 +24,9 @@ func NatTunnel(url, ngrokPath, ngrokLogPath, ngrokConfPath string) {
 		return
 	}
 
+	updateNgrokHost(url)
+	createNgrokConfFile(ngrokConfPath)
+
 	var cmd *exec.Cmd
 	if *FlagNgrokToken != "" {
 		Logger.Println("About to tunnel to public ngrok service")
@@ -32,7 +37,6 @@ func NatTunnel(url, ngrokPath, ngrokLogPath, ngrokConfPath string) {
 			DockerHostPort)
 	} else {
 		Logger.Println("About to tunnel to private ngrok service")
-
 		if !utils.FileExist(ngrokConfPath) {
 			Logger.Println("Cannot find ngrok conf, skipping NAT tunnel")
 			return
@@ -112,5 +116,36 @@ func DownloadNgrok(url, ngrokBinPath string) {
 	} else {
 		Logger.Println("No ngrok binary is found locally. Starting to download ngrok...")
 		downloadFile(url, ngrokBinPath, "gnrok")
+	}
+}
+
+func createNgrokConfFile(ngrokConfPath string) {
+	ngrokConfStr := fmt.Sprintf("server_addr: %s\ntrust_host_root_certs: false", NgrokHost)
+	Logger.Printf("Creating ngrok config file in %s ...\n", ngrokConfPath)
+	if err := ioutil.WriteFile(ngrokConfPath, []byte(ngrokConfStr), 0666); err != nil {
+		Logger.Println("Cannot create ngrok config file:", err.Error())
+	}
+}
+
+func updateNgrokHost(url string) {
+	if NgrokHost != "" {
+		return
+	}
+
+	headers := []string{"Authorization TutumAgentToken " + Conf.TutumToken,
+		"Content-Type application/json"}
+	body, err := SendRequest("GET", utils.JoinURL(url, Conf.TutumUUID), nil, headers)
+	if err != nil {
+		Logger.Printf("Get registration info error, %s\n", err.Error())
+	} else {
+		var form RegGetForm
+		if err = json.Unmarshal(body, &form); err != nil {
+			Logger.Println("Cannot unmarshal the response, ", err.Error())
+		} else {
+			if form.NgrokHost != "" {
+				NgrokHost = form.NgrokHost
+				Logger.Println("Set ngrok server address to", NgrokHost)
+			}
+		}
 	}
 }

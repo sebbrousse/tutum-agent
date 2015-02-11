@@ -41,6 +41,10 @@ func ParseFlag() {
 			"          TutumUUID=\"xxx\"\n")
 	}
 	flag.Parse()
+
+	if *FlagNgrokHost != "" {
+		NgrokHost = *FlagNgrokHost
+	}
 }
 
 func SetConfigFile(configFilePath string) {

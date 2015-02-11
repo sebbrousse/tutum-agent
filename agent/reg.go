@@ -39,6 +39,7 @@ type RegGetForm struct {
 	Tunnel       string `json:"tunnel"`
 	UserCaCert   string `json:"user_ca_cert"`
 	UUID         string `json:"uuid"`
+	NgrokHost    string `json:"ngrok_server_addr"`
 }
 
 func PostToTutum(url, caFilePath, configFilePath string) error {
