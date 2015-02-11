@@ -11,8 +11,8 @@ TUTUM_HOST=https://app-test.tutum.co/
 export DEBIAN_FRONTEND=noninteractive
 
 echo "-> Adding Tutum's GPG key..."
-apt-key adv --keyserver hkp://keyserver.ubuntu.com --recv-keys $GPG_KEY_STAGING_ID > /dev/null
-gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys $GPG_KEY_ID > /dev/null
+curl -Ls --retry 30 --retry-delay 10 https://files.tutum.co/keys/$GPG_KEY_STAGING_ID.pub | apt-key add -
+curl -Ls --retry 30 --retry-delay 10 https://files.tutum.co/keys/$GPG_KEY_ID.pub | gpg --import -
 echo "-> Installing required dependencies..."
 modprobe -q aufs || apt-get update -qq && apt-get install -yq linux-image-extra-$(uname -r) || \
     echo "!! Failed to install linux-image-extra package. AUFS support may not be available."
