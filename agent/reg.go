@@ -28,6 +28,19 @@ type RegPatchForm struct {
 	Version     string `json:"agent_version"`
 }
 
+type RegGetForm struct {
+	AgentVersion string `json:"agent_version"`
+	DockerUrl    string `json:"docker_url"`
+	ExternalFqdn string `json:"external_fqdn"`
+	NgrokUrl     string `json:"ngrok_url"`
+	PublicCert   string `json:"public_cert"`
+	ResourceUri  string `json:"resource_uri"`
+	State        string `json:"state"`
+	Tunnel       string `json:"tunnel"`
+	UserCaCert   string `json:"user_ca_cert"`
+	UUID         string `json:"uuid"`
+}
+
 func PostToTutum(url, caFilePath, configFilePath string) error {
 	form := RegPostForm{}
 	form.Version = VERSION
@@ -35,7 +48,7 @@ func PostToTutum(url, caFilePath, configFilePath string) error {
 	if err != nil {
 		Logger.Fatalln("Cannot marshal the POST form", err)
 	}
-	return Register(url, "POST", Conf.TutumToken, Conf.TutumUUID, caFilePath, configFilePath, data)
+	return register(url, "POST", Conf.TutumToken, Conf.TutumUUID, caFilePath, configFilePath, data)
 }
 
 func PatchToTutum(url, caFilePath, certFilePath, configFilePath string) error {
@@ -52,10 +65,48 @@ func PatchToTutum(url, caFilePath, certFilePath, configFilePath string) error {
 		Logger.Fatalln("Cannot marshal the PATCH form", err)
 	}
 
-	return Register(url, "PATCH", Conf.TutumToken, Conf.TutumUUID, caFilePath, configFilePath, data)
+	return register(url, "PATCH", Conf.TutumToken, Conf.TutumUUID, caFilePath, configFilePath, data)
 }
 
-func Register(url, method, token, uuid, caFilePath, configFilePath string, data []byte) error {
+func VerifyRegistration(url string) {
+	headers := []string{"Authorization TutumAgentToken " + Conf.TutumToken,
+		"Content-Type application/json"}
+	body, err := SendRequest("GET", utils.JoinURL(url, Conf.TutumUUID), nil, headers)
+	if err != nil {
+		Logger.Printf("Get registration info error, %s\n", err.Error())
+	} else {
+		var form RegGetForm
+		if err = json.Unmarshal(body, &form); err != nil {
+			Logger.Println("Cannot unmarshal the response, ", err.Error())
+		} else {
+			if form.State == "Deployed" {
+				Logger.Println("Node registration successful with", Conf.TutumHost)
+				return
+			}
+		}
+	}
+
+	time.Sleep(5 * time.Minute)
+
+	body, err = SendRequest("GET", utils.JoinURL(url, Conf.TutumUUID), nil, headers)
+	if err != nil {
+		Logger.Printf("Get registration info error, %s\n", err.Error())
+	} else {
+		var form RegGetForm
+		if err = json.Unmarshal(body, &form); err != nil {
+			Logger.Println("Cannot unmarshal the response, ", err.Error())
+		} else {
+			if form.State == "Deployed" {
+				Logger.Println("Node registration successful with", Conf.TutumHost)
+			} else {
+				Logger.Println("Node registration timed out with", Conf.TutumHost)
+				Logger.Println("Node state:", form.State)
+			}
+		}
+	}
+}
+
+func register(url, method, token, uuid, caFilePath, configFilePath string, data []byte) error {
 	if token == "" {
 		fmt.Fprintf(os.Stderr, "Tutum token is empty. Please run 'tutum-agent set TutumToken=xxx' first!")
 		Logger.Fatalln("Tutum token is empty. Please run 'tutum-agent set TutumToken=xxx' first!")

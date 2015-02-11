@@ -41,7 +41,6 @@ func SendRequest(method, url string, data_bytes []byte, headers []string) ([]byt
 			if len(terms) == 2 {
 				req.Header.Add(terms[0], terms[1])
 			}
-
 		}
 	}
 	if *FlagDebugMode {
@@ -60,7 +59,6 @@ func SendRequest(method, url string, data_bytes []byte, headers []string) ([]byt
 
 	switch resp.StatusCode {
 	case 200, 201, 202:
-		Logger.Println(resp.Status)
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err
