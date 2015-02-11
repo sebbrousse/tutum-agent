@@ -24,7 +24,7 @@ func main() {
 	certFilePath := path.Join(TutumHome, CertFileName)
 	caFilePath := path.Join(TutumHome, CAFileName)
 	ngrokPath := path.Join(DockerDir, NgrokBinaryName)
-	//	ngrokLogPath := path.Join(LogDir, NgrokLogName)
+	ngrokLogPath := path.Join(LogDir, NgrokLogName)
 
 	ParseFlag()
 	SetLogger(path.Join(LogDir, TutumLogFileName))

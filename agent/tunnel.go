@@ -2,11 +2,11 @@ package agent
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/ActiveState/tail"
 	"github.com/tutumcloud/tutum-agent/utils"
@@ -23,11 +23,14 @@ func NatTunnel(url, ngrokPath, ngrokLogPath string) {
 		return
 	}
 
-	var commandStr string
+	var cmd *exec.Cmd
 	if *FlagNgrokToken != "" {
 		Logger.Println("About to tunnel to public ngrok service")
-		commandStr = fmt.Sprintf("%s -log stdout -authtoken %s -proto tcp %d > %s",
-			ngrokPath, *FlagNgrokToken, DockerHostPort, ngrokLogPath)
+		cmd = exec.Command(ngrokPath,
+			"-log", "stdout",
+			"-authtoken", *FlagNgrokToken,
+			"-proto", "tcp",
+			DockerHostPort)
 	} else {
 		Logger.Println("About to tunnel to private ngrok service")
 		confPath := path.Join(TutumHome, NgrokConfName)
@@ -35,27 +38,38 @@ func NatTunnel(url, ngrokPath, ngrokLogPath string) {
 			Logger.Println("Cannot find ngrok conf, skipping NAT tunnel")
 			return
 		}
-		commandStr = fmt.Sprintf("%s -config=%s -log stdout -proto tcp %d > %s",
-			ngrokPath, confPath, DockerHostPort, ngrokLogPath)
+		cmd = exec.Command(ngrokPath,
+			"-config", confPath,
+			"-log", "stdout",
+			"-proto", "tcp",
+			DockerHostPort)
 	}
 
 	os.RemoveAll(ngrokLogPath)
-	Logger.Println("Starting montoring tunnel:", commandStr)
+	logFile, err := os.OpenFile(ngrokLogPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		Logger.Println(err)
+	} else {
+		defer logFile.Close()
+		cmd.Stdout = logFile
+	}
+
+	Logger.Println("Starting montoring tunnel:", cmd.Args)
 	go monitorTunnels(url, ngrokLogPath)
-	Logger.Println("Starting NAT tunnel:", commandStr)
+	Logger.Println("Starting NAT tunnel:", cmd.Args)
 
 	for {
-		command := exec.Command("/bin/sh", "-c", commandStr)
-		runGronk(command)
-		Logger.Println("Restarting NAT tunnel:", commandStr)
+		runGronk(cmd)
+		Logger.Println("Restarting NAT tunnel:", cmd.Args)
+		time.Sleep(10 * time.Second)
 	}
 }
 
-func runGronk(command *exec.Cmd) bool {
-	if err := command.Start(); err != nil {
+func runGronk(cmd *exec.Cmd) bool {
+	if err := cmd.Start(); err != nil {
 		return true
 	}
-	command.Wait()
+	cmd.Wait()
 	return true
 }
 

@@ -58,5 +58,5 @@ const (
 
 	RenicePriority = -10
 
-	DockerHostPort = 2375
+	DockerHostPort = "2375"
 )
