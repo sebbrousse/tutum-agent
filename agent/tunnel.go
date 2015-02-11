@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"os"
 	"os/exec"
-	"path"
 	"strings"
 	"time"
 
@@ -17,7 +16,7 @@ type TunnelPatchForm struct {
 	Version string `json:"agent_version"`
 }
 
-func NatTunnel(url, ngrokPath, ngrokLogPath string) {
+func NatTunnel(url, ngrokPath, ngrokLogPath, ngrokConfPath string) {
 	if !utils.FileExist(ngrokPath) {
 		Logger.Printf("Cannot find ngrok binary(%s), skipping NAT tunnel\n", ngrokPath)
 		return
@@ -33,13 +32,13 @@ func NatTunnel(url, ngrokPath, ngrokLogPath string) {
 			DockerHostPort)
 	} else {
 		Logger.Println("About to tunnel to private ngrok service")
-		confPath := path.Join(TutumHome, NgrokConfName)
-		if !utils.FileExist(confPath) {
+
+		if !utils.FileExist(ngrokConfPath) {
 			Logger.Println("Cannot find ngrok conf, skipping NAT tunnel")
 			return
 		}
 		cmd = exec.Command(ngrokPath,
-			"-config", confPath,
+			"-config", ngrokConfPath,
 			"-log", "stdout",
 			"-proto", "tcp",
 			DockerHostPort)
@@ -60,8 +59,8 @@ func NatTunnel(url, ngrokPath, ngrokLogPath string) {
 
 	for {
 		runGronk(cmd)
-		Logger.Println("Restarting NAT tunnel:", cmd.Args)
 		time.Sleep(10 * time.Second)
+		Logger.Println("Restarting NAT tunnel:", cmd.Args)
 	}
 }
 

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"runtime"
@@ -25,12 +27,13 @@ func main() {
 	caFilePath := path.Join(TutumHome, CAFileName)
 	ngrokPath := path.Join(DockerDir, NgrokBinaryName)
 	ngrokLogPath := path.Join(LogDir, NgrokLogName)
+	ngrokConfPath := path.Join(TutumHome, NgrokConfName)
 
 	ParseFlag()
 	SetLogger(path.Join(LogDir, TutumLogFileName))
 
 	Logger.Println("Preparing directories and files...")
-	PrepareFiles(configFilePath, dockerBinPath, keyFilePath, certFilePath)
+	PrepareFiles(configFilePath, dockerBinPath, keyFilePath, certFilePath, ngrokConfPath)
 
 	SetConfigFile(configFilePath)
 
@@ -103,7 +106,7 @@ func main() {
 			DownloadNgrok(NgrokBianryURL, ngrokPath)
 		}
 		Logger.Println("Loading NAT tunnel module ...")
-		go NatTunnel(regUrl, ngrokPath, ngrokLogPath)
+		go NatTunnel(regUrl, ngrokPath, ngrokLogPath, ngrokConfPath)
 	}
 
 	if !*FlagStandalone {
@@ -127,7 +130,7 @@ func main() {
 	}
 }
 
-func PrepareFiles(configFilePath, dockerBinPath, keyFilePath, certFilePath string) {
+func PrepareFiles(configFilePath, dockerBinPath, keyFilePath, certFilePath, ngrokConfPath string) {
 	Logger.Println("Creating all necessary folders...")
 	_ = os.MkdirAll(TutumHome, 0755)
 	_ = os.MkdirAll(DockerDir, 0755)
@@ -168,4 +171,17 @@ func PrepareFiles(configFilePath, dockerBinPath, keyFilePath, certFilePath strin
 		Logger.Printf("Override 'TutumUUID' from command line flag: %s\n", *FlagTutumUUID)
 		Conf.TutumUUID = *FlagTutumUUID
 	}
+
+	var ngrokHost string
+	if *FlagNgrokHost != "" {
+		ngrokHost = *FlagNgrokHost
+	} else {
+		ngrokHost = ""
+	}
+	ngrokConfStr := fmt.Sprintf("server_addr: %s:4443\ntrust_host_root_certs: false", ngrokHost)
+	Logger.Printf("Creating ngrok config file in %s ...\n", ngrokConfPath)
+	if err := ioutil.WriteFile(ngrokConfPath, []byte(ngrokConfStr), 0666); err != nil {
+		Logger.Println("Cannot create ngrok config file:", err.Error())
+	}
+
 }

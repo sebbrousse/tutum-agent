@@ -15,6 +15,7 @@ var (
 	FlagTutumToken  *string
 	FlagTutumUUID   *string
 	FlagNgrokToken  *string
+	FlagNgrokHost   *string
 
 	Conf                      Configuration
 	Logger                    *log.Logger
