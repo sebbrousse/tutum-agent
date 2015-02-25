@@ -14,7 +14,7 @@ import (
 )
 
 type TunnelPatchForm struct {
-	Tunnel  string `json:"tunnel:"`
+	Tunnel  string `json:"tunnel"`
 	Version string `json:"agent_version"`
 }
 
