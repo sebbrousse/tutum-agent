@@ -24,6 +24,10 @@ func NatTunnel(url, ngrokPath, ngrokLogPath, ngrokConfPath string) {
 		return
 	}
 
+	if !isNodeNated() {
+		return
+	}
+
 	updateNgrokHost(url)
 	createNgrokConfFile(ngrokConfPath)
 
@@ -147,5 +151,32 @@ func updateNgrokHost(url string) {
 				Logger.Println("Set ngrok server address to", NgrokHost)
 			}
 		}
+	}
+}
+
+func isNodeNated() bool {
+	counter := 0
+	for {
+		if counter > 10 {
+			break
+		}
+		if DockerProcess == nil {
+			time.Sleep(2 * time.Second)
+			counter += 1
+		} else {
+			break
+		}
+	}
+	Logger.Printf("Testing if port %s is publicly reachable ...\n", DockerHostPort)
+	commandStr := fmt.Sprintf("nc %s %s < /dev/null", Conf.CertCommonName, DockerHostPort)
+	Logger.Println(commandStr)
+	command := exec.Command("/bin/sh", "-c", commandStr)
+	command.Start()
+	if err := command.Wait(); err != nil {
+		Logger.Printf("Port %s is not publicly reachable", DockerHostPort)
+		return true
+	} else {
+		Logger.Printf("Port %s is publicly reachable, skipping NAT tunnle", DockerHostPort)
+		return false
 	}
 }
