@@ -168,7 +168,7 @@ func isNodeNated() bool {
 		}
 	}
 	Logger.Printf("Testing if port %s is publicly reachable ...\n", DockerHostPort)
-	commandStr := fmt.Sprintf("nc %s %s < /dev/null", Conf.CertCommonName, DockerHostPort)
+	commandStr := fmt.Sprintf("nc -w 10 %s %s < /dev/null", Conf.CertCommonName, DockerHostPort)
 	Logger.Println(commandStr)
 	command := exec.Command("/bin/sh", "-c", commandStr)
 	command.Start()
