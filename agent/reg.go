@@ -1,46 +1,59 @@
 package agent
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"time"
 
 	"github.com/tutumcloud/tutum-agent/utils"
 )
 
-type ResponseForm struct {
+type RegResponseForm struct {
 	UserCaCert      string `json:"user_ca_cert"`
 	TutumUUID       string `json:"uuid"`
 	CertCommonName  string `json:"external_fqdn"`
 	DockerBinaryURL string `json:"docker_url"`
+	NgrokBinaryURL  string `json:"ngrok_url"`
 }
 
-type PostForm struct {
+type RegPostForm struct {
 	Version string `json:"agent_version"`
 }
 
-type PatchForm struct {
+type RegPatchForm struct {
 	Public_cert string `json:"public_cert"`
 	Version     string `json:"agent_version"`
 }
 
+type RegGetForm struct {
+	AgentVersion string `json:"agent_version"`
+	DockerUrl    string `json:"docker_url"`
+	ExternalFqdn string `json:"external_fqdn"`
+	NgrokUrl     string `json:"ngrok_url"`
+	PublicCert   string `json:"public_cert"`
+	ResourceUri  string `json:"resource_uri"`
+	State        string `json:"state"`
+	Tunnel       string `json:"tunnel"`
+	UserCaCert   string `json:"user_ca_cert"`
+	UUID         string `json:"uuid"`
+	NgrokHost    string `json:"ngrok_server_addr"`
+}
+
 func PostToTutum(url, caFilePath, configFilePath string) error {
-	form := PostForm{}
+	form := RegPostForm{}
 	form.Version = VERSION
 	data, err := json.Marshal(form)
 	if err != nil {
 		Logger.Fatalln("Cannot marshal the POST form", err)
 	}
-	return Register(url, "POST", Conf.TutumToken, Conf.TutumUUID, caFilePath, configFilePath, data)
+	return register(url, "POST", Conf.TutumToken, Conf.TutumUUID, caFilePath, configFilePath, data)
 }
 
 func PatchToTutum(url, caFilePath, certFilePath, configFilePath string) error {
-	form := PatchForm{}
+	form := RegPatchForm{}
 	form.Version = VERSION
 	cert, err := GetCertificate(certFilePath)
 	if err != nil {
@@ -53,10 +66,48 @@ func PatchToTutum(url, caFilePath, certFilePath, configFilePath string) error {
 		Logger.Fatalln("Cannot marshal the PATCH form", err)
 	}
 
-	return Register(url, "PATCH", Conf.TutumToken, Conf.TutumUUID, caFilePath, configFilePath, data)
+	return register(url, "PATCH", Conf.TutumToken, Conf.TutumUUID, caFilePath, configFilePath, data)
 }
 
-func Register(url, method, token, uuid, caFilePath, configFilePath string, data []byte) error {
+func VerifyRegistration(url string) {
+	headers := []string{"Authorization TutumAgentToken " + Conf.TutumToken,
+		"Content-Type application/json"}
+	body, err := SendRequest("GET", utils.JoinURL(url, Conf.TutumUUID), nil, headers)
+	if err != nil {
+		Logger.Printf("Get registration info error, %s\n", err.Error())
+	} else {
+		var form RegGetForm
+		if err = json.Unmarshal(body, &form); err != nil {
+			Logger.Println("Cannot unmarshal the response, ", err.Error())
+		} else {
+			if form.State == "Deployed" {
+				Logger.Println("Node registration successful with", Conf.TutumHost)
+				return
+			}
+		}
+	}
+
+	time.Sleep(5 * time.Minute)
+
+	body, err = SendRequest("GET", utils.JoinURL(url, Conf.TutumUUID), nil, headers)
+	if err != nil {
+		Logger.Printf("Get registration info error, %s\n", err.Error())
+	} else {
+		var form RegGetForm
+		if err = json.Unmarshal(body, &form); err != nil {
+			Logger.Println("Cannot unmarshal the response, ", err.Error())
+		} else {
+			if form.State == "Deployed" {
+				Logger.Println("Node registration successful with", Conf.TutumHost)
+			} else {
+				Logger.Println("Node registration timed out with", Conf.TutumHost)
+				Logger.Println("Node state:", form.State)
+			}
+		}
+	}
+}
+
+func register(url, method, token, uuid, caFilePath, configFilePath string, data []byte) error {
 	if token == "" {
 		fmt.Fprintf(os.Stderr, "Tutum token is empty. Please run 'tutum-agent set TutumToken=xxx' first!")
 		Logger.Fatalln("Tutum token is empty. Please run 'tutum-agent set TutumToken=xxx' first!")
@@ -68,68 +119,27 @@ func Register(url, method, token, uuid, caFilePath, configFilePath string, data 
 		}
 		body, err := sendRegRequest(url, method, token, uuid, data)
 		if err == nil {
-			if err = handleResponse(body, caFilePath, configFilePath); err == nil {
+			if err = handleRegResponse(body, caFilePath, configFilePath); err == nil {
 				return nil
 			}
 		}
-		if err.Error() == "Error 404" {
+		if err.Error() == "Status: 404" {
 			return err
 		}
-		Logger.Printf("Registration failed: %s. Retry in %d seconds\n", err.Error(), i)
+		Logger.Printf("Registration failed, %s. Retry in %d seconds\n", err.Error(), i)
 		time.Sleep(time.Duration(i) * time.Second)
 	}
 }
 
 func sendRegRequest(url, method, token, uuid string, data []byte) ([]byte, error) {
-	client := &http.Client{}
-	req, err := http.NewRequest(method, utils.JoinURL(url, uuid), bytes.NewReader(data))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("Authorization", "TutumAgentToken "+token)
-	req.Header.Add("Content-Type", "application/json")
-	if *FlagDebugMode {
-		Logger.Println("=======Request Info ======")
-		Logger.Println("=> URL:", utils.JoinURL(url, uuid))
-		Logger.Println("=> Method:", method)
-		Logger.Println("=> Headers:", req.Header)
-		Logger.Println("=> Body:", string(data))
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+	headers := []string{"Authorization TutumAgentToken " + token,
+		"Content-Type application/json"}
+	return SendRequest(method, utils.JoinURL(url, uuid), data, headers)
 
-	switch resp.StatusCode {
-	case 200, 201, 202:
-		Logger.Println(resp.Status)
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-
-		if *FlagDebugMode {
-			Logger.Println("=======Response Info ======")
-			Logger.Println("=> Headers:", resp.Header)
-			Logger.Println("=> Body:", string(body))
-		}
-		return body, nil
-	case 404:
-		return nil, errors.New("Error 404")
-	default:
-		if *FlagDebugMode {
-			Logger.Println("=======Response Info (ERROR) ======")
-			Logger.Println("=> Headers:", resp.Header)
-			b, _ := ioutil.ReadAll(resp.Body)
-			Logger.Println("=> Body:", string(b))
-		}
-		return nil, errors.New(resp.Status)
-	}
 }
 
-func handleResponse(body []byte, caFilePath, configFilePath string) error {
-	var responseForm ResponseForm
+func handleRegResponse(body []byte, caFilePath, configFilePath string) error {
+	var responseForm RegResponseForm
 
 	// Save ca cert file
 	if err := json.Unmarshal(body, &responseForm); err != nil {
@@ -153,6 +163,9 @@ func handleResponse(body []byte, caFilePath, configFilePath string) error {
 
 	DockerBinaryURL = responseForm.DockerBinaryURL
 
+	if responseForm.NgrokBinaryURL != "" {
+		NgrokBianryURL = responseForm.NgrokBinaryURL
+	}
 	// Save to configuration file
 	if isModified {
 		Logger.Println("Updating configraution file ...")

@@ -27,6 +27,8 @@ func ParseFlag() {
 	FlagTutumHost = flag.String("tutum-host", "", "Override 'TutumHost'")
 	FlagTutumToken = flag.String("tutum-token", "", "Override 'TutumToken'")
 	FlagTutumUUID = flag.String("tutum-uuid", "", "Override 'TutumUUID'")
+	FlagNgrokToken = flag.String("ngrok-token", "", "ngrok token for NAT tunneling")
+	FlagNgrokHost = flag.String("ngrok-host", "", "ngrok host for NAT tunneling")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
@@ -39,6 +41,10 @@ func ParseFlag() {
 			"          TutumUUID=\"xxx\"\n")
 	}
 	flag.Parse()
+
+	if *FlagNgrokHost != "" {
+		NgrokHost = *FlagNgrokHost
+	}
 }
 
 func SetConfigFile(configFilePath string) {

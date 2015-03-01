@@ -14,16 +14,20 @@ var (
 	FlagTutumHost   *string
 	FlagTutumToken  *string
 	FlagTutumUUID   *string
+	FlagNgrokToken  *string
+	FlagNgrokHost   *string
 
 	Conf                      Configuration
 	Logger                    *log.Logger
 	DockerProcess             *os.Process
 	ScheduleToTerminateDocker = false
 	DockerBinaryURL           = "https://files.tutum.co/packages/docker/latest.json"
+	NgrokBianryURL            = ""
+	NgrokHost                 = ""
 )
 
 const (
-	VERSION               = "0.11.3"
+	VERSION               = "0.13.0"
 	defaultCertCommonName = ""
 	defaultDockerHost     = "tcp://0.0.0.0:2375"
 	defaultTutumHost      = "https://dashboard.tutum.co/"
@@ -44,6 +48,9 @@ const (
 	DockerBinaryName       = "docker"
 	DockerNewBinaryName    = "docker.new"
 	DockerNewBinarySigName = "docker.new.sig"
+	NgrokBinaryName        = "ngrok"
+	NgrokLogName           = "ngrok.log"
+	NgrokConfName          = "ngrok.conf"
 
 	RegEndpoint       = "api/agent/node/"
 	DockerDefaultHost = "unix:///var/run/docker.sock"
@@ -52,4 +59,6 @@ const (
 	HeartBeatInterval = 5   //second
 
 	RenicePriority = -10
+
+	DockerHostPort = "2375"
 )
