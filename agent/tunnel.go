@@ -119,7 +119,7 @@ func DownloadNgrok(url, ngrokBinPath string) {
 		Logger.Printf("Found ngrok locally(%s), skip downloading\n", ngrokBinPath)
 	} else {
 		Logger.Println("No ngrok binary is found locally. Starting to download ngrok...")
-		downloadFile(url, ngrokBinPath, "gnrok")
+		downloadFile(url, ngrokBinPath, "ngrok")
 	}
 }
 
@@ -169,7 +169,6 @@ func isNodeNated() bool {
 	}
 	Logger.Printf("Testing if port %s is publicly reachable ...\n", DockerHostPort)
 	commandStr := fmt.Sprintf("nc -w 10 %s %s < /dev/null", Conf.CertCommonName, DockerHostPort)
-	Logger.Println(commandStr)
 	command := exec.Command("/bin/sh", "-c", commandStr)
 	command.Start()
 	if err := command.Wait(); err != nil {
