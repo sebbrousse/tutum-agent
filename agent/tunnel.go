@@ -20,7 +20,7 @@ type TunnelPatchForm struct {
 
 func NatTunnel(url, ngrokPath, ngrokLogPath, ngrokConfPath string) {
 	if !utils.FileExist(ngrokPath) {
-		Logger.Printf("Cannot find ngrok binary(%s), skipping NAT tunnel\n", ngrokPath)
+		Logger.Printf("Cannot find ngrok binary(%s), skipping NAT tunnel", ngrokPath)
 		return
 	}
 
@@ -88,7 +88,7 @@ func monitorTunnels(url, ngrokLogPath string) {
 		if strings.Contains(line.Text, "[INFO] [client] Tunnel established at") {
 			terms := strings.Split(line.Text, " ")
 			tunnel := terms[len(terms)-1]
-			Logger.Printf("Found new tunnel:%s\n", tunnel)
+			Logger.Printf("Found new tunnel:%s", tunnel)
 			patchTunnelToTutum(url, tunnel)
 		}
 	}
@@ -108,7 +108,7 @@ func patchTunnelToTutum(url, tunnel string) {
 		"Content-Type", "application/json"}
 	_, err = SendRequest("PATCH", utils.JoinURL(url, Conf.TutumUUID), data, headers)
 	if err != nil {
-		Logger.Println("Failed to patch tunnel address to Tutum,", err.Error())
+		Logger.Println("Failed to patch tunnel address to Tutum,", err)
 	} else {
 		Logger.Println("Successfully Patched tunnel address to Tutum")
 	}
@@ -116,18 +116,18 @@ func patchTunnelToTutum(url, tunnel string) {
 
 func DownloadNgrok(url, ngrokBinPath string) {
 	if utils.FileExist(ngrokBinPath) {
-		Logger.Printf("Found ngrok locally(%s), skip downloading\n", ngrokBinPath)
+		Logger.Printf("Found ngrok locally(%s), skip downloading", ngrokBinPath)
 	} else {
 		Logger.Println("No ngrok binary is found locally. Starting to download ngrok...")
-		downloadFile(url, ngrokBinPath, "gnrok")
+		downloadFile(url, ngrokBinPath, "ngrok")
 	}
 }
 
 func createNgrokConfFile(ngrokConfPath string) {
 	ngrokConfStr := fmt.Sprintf("server_addr: %s\ntrust_host_root_certs: false", NgrokHost)
-	Logger.Printf("Creating ngrok config file in %s ...\n", ngrokConfPath)
+	Logger.Printf("Creating ngrok config file in %s ...", ngrokConfPath)
 	if err := ioutil.WriteFile(ngrokConfPath, []byte(ngrokConfStr), 0666); err != nil {
-		Logger.Println("Cannot create ngrok config file:", err.Error())
+		Logger.Println("Cannot create ngrok config file:", err)
 	}
 }
 
@@ -140,11 +140,11 @@ func updateNgrokHost(url string) {
 		"Content-Type application/json"}
 	body, err := SendRequest("GET", utils.JoinURL(url, Conf.TutumUUID), nil, headers)
 	if err != nil {
-		Logger.Printf("Get registration info error, %s\n", err.Error())
+		Logger.Printf("Get registration info error, %s", err)
 	} else {
 		var form RegGetForm
 		if err = json.Unmarshal(body, &form); err != nil {
-			Logger.Println("Cannot unmarshal the response, ", err.Error())
+			Logger.Println("Cannot unmarshal the response", err)
 		} else {
 			if form.NgrokHost != "" {
 				NgrokHost = form.NgrokHost
@@ -155,28 +155,29 @@ func updateNgrokHost(url string) {
 }
 
 func isNodeNated() bool {
-	counter := 0
+	Logger.Printf("Testing if port %s is publicly reachable ...", DockerHostPort)
+	Logger.Println("Waiting for the startup of docker ...")
 	for {
-		if counter > 10 {
+		cmdstring := fmt.Sprintf("nc -w 10 127.0.0.1 %s < /dev/null", DockerHostPort)
+		command := exec.Command("/bin/sh", "-c", cmdstring)
+		command.Start()
+		if err := command.Wait(); err == nil {
+			Logger.Println("Docker daemon has started, testing if it's publicly reachable")
 			break
-		}
-		if DockerProcess == nil {
-			time.Sleep(2 * time.Second)
-			counter += 1
 		} else {
-			break
+			Logger.Println("Docker daemon has not started yet. Retrying in 2 seconds")
+			time.Sleep(2 * time.Second)
 		}
 	}
-	Logger.Printf("Testing if port %s is publicly reachable ...\n", DockerHostPort)
-	commandStr := fmt.Sprintf("nc -w 10 %s %s < /dev/null", Conf.CertCommonName, DockerHostPort)
-	Logger.Println(commandStr)
-	command := exec.Command("/bin/sh", "-c", commandStr)
+
+	cmdstring := fmt.Sprintf("nc -w 10 %s %s < /dev/null", Conf.CertCommonName, DockerHostPort)
+	command := exec.Command("/bin/sh", "-c", cmdstring)
 	command.Start()
 	if err := command.Wait(); err != nil {
 		Logger.Printf("Port %s is not publicly reachable", DockerHostPort)
 		return true
 	} else {
-		Logger.Printf("Port %s is publicly reachable, skipping NAT tunnle", DockerHostPort)
+		Logger.Printf("Port %s is publicly reachable, skipping NAT tunnel", DockerHostPort)
 		return false
 	}
 }

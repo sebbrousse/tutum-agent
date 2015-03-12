@@ -81,7 +81,7 @@ func SetConfigFile(configFilePath string) {
 				} else if strings.ToLower(key) == strings.ToLower("TutumUUID") {
 					Conf.TutumUUID = value
 				} else {
-					fmt.Fprintf(os.Stderr, "Unsupported item \"%s\" in \"tutum-agent set\" command", key)
+					fmt.Fprintf(os.Stderr, "Unsupported item \"%s\" in \"tutum-agent set\" command\n", key)
 					os.Exit(1)
 				}
 			}

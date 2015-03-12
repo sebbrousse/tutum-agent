@@ -22,7 +22,7 @@ func HandleSig() {
 					Logger.Fatalln("tutum-agent is terminated")
 				} else {
 					Logger.Println("Docker daemon is running")
-					Logger.Println("Start to shut down docker daemon gracefully")
+					Logger.Println("Starting to shut down docker daemon gracefully")
 					ScheduleToTerminateDocker = true
 					DockerProcess.Signal(syscall.SIGTERM)
 				}

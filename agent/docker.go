@@ -17,9 +17,9 @@ import (
 
 func DownloadDocker(url, dockerBinPath string) {
 	if utils.FileExist(dockerBinPath) {
-		Logger.Printf("Found docker locally(%s), skip downloading\n", dockerBinPath)
+		Logger.Printf("Found docker locally (%s), skipping download", dockerBinPath)
 	} else {
-		Logger.Println("No docker binary is found locally. Starting to download docker...")
+		Logger.Println("No docker binary found locally. Downloading docker binary...")
 		downloadFile(url, dockerBinPath, "docker")
 	}
 	createDockerSymlink(dockerBinPath, DockerSymbolicLink)
@@ -27,13 +27,24 @@ func DownloadDocker(url, dockerBinPath string) {
 
 func StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath string) {
 	var command *exec.Cmd
+	var cmdstring string
 
-	cmdstring := fmt.Sprintf("-d -H %s -H %s --tlscert %s --tlskey %s --tlscacert %s --tlsverify",
-		Conf.DockerHost, DockerDefaultHost, certFilePath, keyFilePath, caFilePath)
-
+	if *FlagDebugMode {
+		cmdstring = fmt.Sprintf("-d -D -H %s -H %s --tlscert %s --tlskey %s --tlscacert %s --tlsverify",
+			Conf.DockerHost, DockerDefaultHost, certFilePath, keyFilePath, caFilePath)
+	} else {
+		cmdstring = fmt.Sprintf("-d -H %s -H %s --tlscert %s --tlskey %s --tlscacert %s --tlsverify",
+			Conf.DockerHost, DockerDefaultHost, certFilePath, keyFilePath, caFilePath)
+	}
 	if *FlagStandalone && !utils.FileExist(caFilePath) {
-		cmdstring = fmt.Sprintf("-d -H %s -H %s --tlscert %s --tlskey %s --tls",
-			Conf.DockerHost, DockerDefaultHost, certFilePath, keyFilePath)
+		if *FlagDebugMode {
+			cmdstring = fmt.Sprintf("-d -D -H %s -H %s --tlscert %s --tlskey %s --tls",
+				Conf.DockerHost, DockerDefaultHost, certFilePath, keyFilePath)
+		} else {
+			cmdstring = fmt.Sprintf("-d -H %s -H %s --tlscert %s --tlskey %s --tls",
+				Conf.DockerHost, DockerDefaultHost, certFilePath, keyFilePath)
+		}
+
 		fmt.Fprintln(os.Stderr, "WARNING: standalone mode activated but no CA certificate found - client authentication disabled")
 	}
 
@@ -66,7 +77,7 @@ func StopDocker() {
 
 func UpdateDocker(dockerBinPath, dockerNewBinPath, dockerNewBinSigPath, keyFilePath, certFilePath, caFilePath string) {
 	if utils.FileExist(dockerNewBinPath) {
-		Logger.Printf("New Docker binary(%s) found\n", dockerNewBinPath)
+		Logger.Printf("New Docker binary(%s) found", dockerNewBinPath)
 		Logger.Println("Updating docker...")
 		if verifyDockerSig(dockerNewBinPath, dockerNewBinSigPath) {
 			Logger.Println("Stopping docker daemon")
@@ -80,9 +91,9 @@ func UpdateDocker(dockerBinPath, dockerNewBinPath, dockerNewBinSigPath, keyFileP
 			if err := os.Rename(dockerNewBinPath, dockerBinPath); err != nil {
 				Logger.Println("Cannot rename docker binary:", err)
 			}
-			Logger.Println("Removing the signature file ", dockerNewBinSigPath)
+			Logger.Println("Removing the signature file", dockerNewBinSigPath)
 			if err := os.RemoveAll(dockerNewBinSigPath); err != nil {
-				Logger.Println(err.Error())
+				Logger.Println(err)
 			}
 			createDockerSymlink(dockerBinPath, DockerSymbolicLink)
 			ScheduleToTerminateDocker = false
@@ -90,13 +101,13 @@ func UpdateDocker(dockerBinPath, dockerNewBinPath, dockerNewBinSigPath, keyFileP
 			Logger.Println("Succeeded to update docker binary")
 		} else {
 			Logger.Println("New docker binary signature cannot be verified. Update is rejected!")
-			Logger.Println("Removing the invalid docker binary ", dockerNewBinPath)
+			Logger.Println("Removing the invalid docker binary", dockerNewBinPath)
 			if err := os.RemoveAll(dockerNewBinPath); err != nil {
-				Logger.Println(err.Error())
+				Logger.Println(err)
 			}
-			Logger.Println("Removing the invalid signature file ", dockerNewBinSigPath)
+			Logger.Println("Removing the invalid signature file", dockerNewBinSigPath)
 			if err := os.RemoveAll(dockerNewBinSigPath); err != nil {
-				Logger.Println(err.Error())
+				Logger.Println(err)
 			}
 			Logger.Println("Failed to update docker binary")
 		}
@@ -107,28 +118,28 @@ func verifyDockerSig(dockerNewBinPath, dockerNewBinSigPath string) bool {
 	cmd := exec.Command("gpg", "--verify", dockerNewBinSigPath, dockerNewBinPath)
 	err := cmd.Run()
 	if err != nil {
-		Logger.Println("gpg verfication failed:", err.Error())
+		Logger.Println("GPG verfication failed:", err)
 		return false
 	}
-	Logger.Println("gpg verfication passed")
+	Logger.Println("GPG verfication passed")
 	return true
 }
 
 func createDockerSymlink(dockerBinPath, dockerSymbolicLink string) {
-	Logger.Println("Removing the docker symbolic from ", dockerSymbolicLink)
+	Logger.Println("Removing the docker symbolic link from", dockerSymbolicLink)
 	if err := os.RemoveAll(DockerSymbolicLink); err != nil {
-		Logger.Println(err.Error())
+		Logger.Println(err)
 	}
-	Logger.Println("Creating the docker symbolic to ", dockerSymbolicLink)
+	Logger.Println("Creating the docker symbolic link to", dockerSymbolicLink)
 	if err := os.Symlink(dockerBinPath, DockerSymbolicLink); err != nil {
-		Logger.Println(err.Error())
+		Logger.Println(err)
 	}
 }
 
 func runDocker(cmd *exec.Cmd) {
 	//open file to log docker logs
 	dockerLog := path.Join(LogDir, DockerLogFileName)
-	Logger.Println("Set docker log to", dockerLog)
+	Logger.Println("Setting docker log to", dockerLog)
 	f, err := os.OpenFile(dockerLog, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		Logger.Println(err)
@@ -145,9 +156,9 @@ func runDocker(cmd *exec.Cmd) {
 		Logger.Println("Cannot start docker daemon:", err)
 	}
 	DockerProcess = cmd.Process
-	Logger.Printf("Docker daemon (PID:%d) has been started\n", DockerProcess.Pid)
+	Logger.Printf("Docker daemon (PID:%d) has been started", DockerProcess.Pid)
 
-	Logger.Printf("Renicing docker daemon to priority %d\n", RenicePriority)
+	Logger.Printf("Renicing docker daemon to priority %d", RenicePriority)
 	syscall.Setpriority(syscall.PRIO_PROCESS, DockerProcess.Pid, RenicePriority)
 
 	exit_renice := make(chan int)

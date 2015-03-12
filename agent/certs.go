@@ -97,7 +97,7 @@ func genCetificate(keyFilePath, certFilePath, host string) {
 	}
 	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
 	certOut.Close()
-	Logger.Printf("Written certificate to %s\n", certFilePath)
+	Logger.Printf("Written certificate to %s", certFilePath)
 
 	keyOut, err := os.OpenFile(keyFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
@@ -106,7 +106,7 @@ func genCetificate(keyFilePath, certFilePath, host string) {
 	}
 	pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
 	keyOut.Close()
-	Logger.Printf("Written %s\n", keyFilePath)
+	Logger.Printf("Written %s", keyFilePath)
 }
 
 func GetCertificate(certFilePath string) (*string, error) {

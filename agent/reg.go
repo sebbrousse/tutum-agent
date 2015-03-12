@@ -74,11 +74,11 @@ func VerifyRegistration(url string) {
 		"Content-Type application/json"}
 	body, err := SendRequest("GET", utils.JoinURL(url, Conf.TutumUUID), nil, headers)
 	if err != nil {
-		Logger.Printf("Get registration info error, %s\n", err.Error())
+		Logger.Printf("Get registration info error, %s", err)
 	} else {
 		var form RegGetForm
 		if err = json.Unmarshal(body, &form); err != nil {
-			Logger.Println("Cannot unmarshal the response, ", err.Error())
+			Logger.Println("Cannot unmarshal the response", err)
 		} else {
 			if form.State == "Deployed" {
 				Logger.Println("Node registration successful with", Conf.TutumHost)
@@ -91,11 +91,11 @@ func VerifyRegistration(url string) {
 
 	body, err = SendRequest("GET", utils.JoinURL(url, Conf.TutumUUID), nil, headers)
 	if err != nil {
-		Logger.Printf("Get registration info error, %s\n", err.Error())
+		Logger.Printf("Get registration info error, %s", err)
 	} else {
 		var form RegGetForm
 		if err = json.Unmarshal(body, &form); err != nil {
-			Logger.Println("Cannot unmarshal the response, ", err.Error())
+			Logger.Println("Cannot unmarshal the response", err)
 		} else {
 			if form.State == "Deployed" {
 				Logger.Println("Node registration successful with", Conf.TutumHost)
@@ -109,7 +109,7 @@ func VerifyRegistration(url string) {
 
 func register(url, method, token, uuid, caFilePath, configFilePath string, data []byte) error {
 	if token == "" {
-		fmt.Fprintf(os.Stderr, "Tutum token is empty. Please run 'tutum-agent set TutumToken=xxx' first!")
+		fmt.Fprintf(os.Stderr, "Tutum token is empty. Please run 'tutum-agent set TutumToken=xxx' first!\n")
 		Logger.Fatalln("Tutum token is empty. Please run 'tutum-agent set TutumToken=xxx' first!")
 	}
 
@@ -126,7 +126,7 @@ func register(url, method, token, uuid, caFilePath, configFilePath string, data 
 		if err.Error() == "Status: 404" {
 			return err
 		}
-		Logger.Printf("Registration failed, %s. Retry in %d seconds\n", err.Error(), i)
+		Logger.Printf("Registration failed, %s. Retry in %d seconds", err, i)
 		time.Sleep(time.Duration(i) * time.Second)
 	}
 }
@@ -151,12 +151,12 @@ func handleRegResponse(body []byte, caFilePath, configFilePath string) error {
 	// Update global Conf
 	isModified := false
 	if Conf.CertCommonName != responseForm.CertCommonName {
-		Logger.Printf("Cert CommonName has been changed from %s to %s\n", Conf.CertCommonName, responseForm.CertCommonName)
+		Logger.Printf("Cert CommonName has been changed from %s to %s", Conf.CertCommonName, responseForm.CertCommonName)
 		isModified = true
 		Conf.CertCommonName = responseForm.CertCommonName
 	}
 	if Conf.TutumUUID != responseForm.TutumUUID {
-		Logger.Printf("Tutum UUID has been changed from %s to %s\n", Conf.TutumUUID, responseForm.TutumUUID)
+		Logger.Printf("Tutum UUID has been changed from %s to %s", Conf.TutumUUID, responseForm.TutumUUID)
 		isModified = true
 		Conf.TutumUUID = responseForm.TutumUUID
 	}
@@ -168,7 +168,7 @@ func handleRegResponse(body []byte, caFilePath, configFilePath string) error {
 	}
 	// Save to configuration file
 	if isModified {
-		Logger.Println("Updating configraution file ...")
+		Logger.Println("Updating configuration file ...")
 		return SaveConf(configFilePath, Conf)
 	}
 	return nil
