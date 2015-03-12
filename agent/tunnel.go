@@ -144,7 +144,7 @@ func updateNgrokHost(url string) {
 	} else {
 		var form RegGetForm
 		if err = json.Unmarshal(body, &form); err != nil {
-			Logger.Println("Cannot unmarshal the response, ", err)
+			Logger.Println("Cannot unmarshal the response", err)
 		} else {
 			if form.NgrokHost != "" {
 				NgrokHost = form.NgrokHost

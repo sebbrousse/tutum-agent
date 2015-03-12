@@ -17,9 +17,9 @@ import (
 
 func DownloadDocker(url, dockerBinPath string) {
 	if utils.FileExist(dockerBinPath) {
-		Logger.Printf("Found docker locally(%s), skip downloading", dockerBinPath)
+		Logger.Printf("Found docker locally (%s), skipping download", dockerBinPath)
 	} else {
-		Logger.Println("No docker binary is found locally. Starting to download docker...")
+		Logger.Println("No docker binary found locally. Downloading docker binary...")
 		downloadFile(url, dockerBinPath, "docker")
 	}
 	createDockerSymlink(dockerBinPath, DockerSymbolicLink)
@@ -91,7 +91,7 @@ func UpdateDocker(dockerBinPath, dockerNewBinPath, dockerNewBinSigPath, keyFileP
 			if err := os.Rename(dockerNewBinPath, dockerBinPath); err != nil {
 				Logger.Println("Cannot rename docker binary:", err)
 			}
-			Logger.Println("Removing the signature file ", dockerNewBinSigPath)
+			Logger.Println("Removing the signature file", dockerNewBinSigPath)
 			if err := os.RemoveAll(dockerNewBinSigPath); err != nil {
 				Logger.Println(err)
 			}
@@ -101,11 +101,11 @@ func UpdateDocker(dockerBinPath, dockerNewBinPath, dockerNewBinSigPath, keyFileP
 			Logger.Println("Succeeded to update docker binary")
 		} else {
 			Logger.Println("New docker binary signature cannot be verified. Update is rejected!")
-			Logger.Println("Removing the invalid docker binary ", dockerNewBinPath)
+			Logger.Println("Removing the invalid docker binary", dockerNewBinPath)
 			if err := os.RemoveAll(dockerNewBinPath); err != nil {
 				Logger.Println(err)
 			}
-			Logger.Println("Removing the invalid signature file ", dockerNewBinSigPath)
+			Logger.Println("Removing the invalid signature file", dockerNewBinSigPath)
 			if err := os.RemoveAll(dockerNewBinSigPath); err != nil {
 				Logger.Println(err)
 			}
@@ -118,19 +118,19 @@ func verifyDockerSig(dockerNewBinPath, dockerNewBinSigPath string) bool {
 	cmd := exec.Command("gpg", "--verify", dockerNewBinSigPath, dockerNewBinPath)
 	err := cmd.Run()
 	if err != nil {
-		Logger.Println("gpg verfication failed:", err)
+		Logger.Println("GPG verfication failed:", err)
 		return false
 	}
-	Logger.Println("gpg verfication passed")
+	Logger.Println("GPG verfication passed")
 	return true
 }
 
 func createDockerSymlink(dockerBinPath, dockerSymbolicLink string) {
-	Logger.Println("Removing the docker symbolic from ", dockerSymbolicLink)
+	Logger.Println("Removing the docker symbolic link from", dockerSymbolicLink)
 	if err := os.RemoveAll(DockerSymbolicLink); err != nil {
 		Logger.Println(err)
 	}
-	Logger.Println("Creating the docker symbolic to ", dockerSymbolicLink)
+	Logger.Println("Creating the docker symbolic link to", dockerSymbolicLink)
 	if err := os.Symlink(dockerBinPath, DockerSymbolicLink); err != nil {
 		Logger.Println(err)
 	}
@@ -139,7 +139,7 @@ func createDockerSymlink(dockerBinPath, dockerSymbolicLink string) {
 func runDocker(cmd *exec.Cmd) {
 	//open file to log docker logs
 	dockerLog := path.Join(LogDir, DockerLogFileName)
-	Logger.Println("Set docker log to", dockerLog)
+	Logger.Println("Setting docker log to", dockerLog)
 	f, err := os.OpenFile(dockerLog, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		Logger.Println(err)

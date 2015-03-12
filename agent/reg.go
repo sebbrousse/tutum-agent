@@ -78,7 +78,7 @@ func VerifyRegistration(url string) {
 	} else {
 		var form RegGetForm
 		if err = json.Unmarshal(body, &form); err != nil {
-			Logger.Println("Cannot unmarshal the response, ", err)
+			Logger.Println("Cannot unmarshal the response", err)
 		} else {
 			if form.State == "Deployed" {
 				Logger.Println("Node registration successful with", Conf.TutumHost)
@@ -95,7 +95,7 @@ func VerifyRegistration(url string) {
 	} else {
 		var form RegGetForm
 		if err = json.Unmarshal(body, &form); err != nil {
-			Logger.Println("Cannot unmarshal the response, ", err)
+			Logger.Println("Cannot unmarshal the response", err)
 		} else {
 			if form.State == "Deployed" {
 				Logger.Println("Node registration successful with", Conf.TutumHost)
@@ -109,7 +109,7 @@ func VerifyRegistration(url string) {
 
 func register(url, method, token, uuid, caFilePath, configFilePath string, data []byte) error {
 	if token == "" {
-		fmt.Fprintf(os.Stderr, "Tutum token is empty. Please run 'tutum-agent set TutumToken=xxx' first!")
+		fmt.Fprintf(os.Stderr, "Tutum token is empty. Please run 'tutum-agent set TutumToken=xxx' first!\n")
 		Logger.Fatalln("Tutum token is empty. Please run 'tutum-agent set TutumToken=xxx' first!")
 	}
 
@@ -168,7 +168,7 @@ func handleRegResponse(body []byte, caFilePath, configFilePath string) error {
 	}
 	// Save to configuration file
 	if isModified {
-		Logger.Println("Updating configraution file ...")
+		Logger.Println("Updating configuration file ...")
 		return SaveConf(configFilePath, Conf)
 	}
 	return nil

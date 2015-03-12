@@ -142,7 +142,7 @@ func getTargetDef(url string) (*TargetDef, error) {
 		return nil, err
 	}
 	if def == (TargetDef{}) {
-		return nil, errors.New("Wrong target defniniton")
+		return nil, errors.New("Wrong target definition")
 	}
 	return &def, nil
 }
@@ -191,7 +191,7 @@ func getTarget(def *TargetDef) ([]byte, error) {
 	sha256hasher := sha256.New()
 	sha256hasher.Write(b)
 	sha256s := hex.EncodeToString(sha256hasher.Sum(nil))
-	Logger.Println("Checksum of the downloaded target, shar256:", sha256s)
+	Logger.Println("Checksum of the downloaded target, sha256:", sha256s)
 	sha256b, err := HttpGet(def.Checksum_sha256_url)
 	if err != nil {
 		Logger.Println("Failed to get sha256 for the target")
@@ -213,7 +213,7 @@ func writeToFile(binary []byte, path string) {
 			i = 1
 		}
 		if err != nil {
-			Logger.Printf("Failed to save the target: %s. Retry in %d second", err, i)
+			Logger.Printf("Failed to save the target: %s. Retrying in %d second", err, i)
 			time.Sleep(time.Duration(i) * time.Second)
 			err = ioutil.WriteFile(path, binary, 0755)
 		} else {
