@@ -156,16 +156,16 @@ func updateNgrokHost(url string) {
 
 func isNodeNated() bool {
 	Logger.Printf("Testing if port %s is publicly reachable ...", DockerHostPort)
-	Logger.Println("Waiting for the starup of docker ...")
+	Logger.Println("Waiting for the startup of docker ...")
 	for {
 		cmdstring := fmt.Sprintf("nc -w 10 127.0.0.1 %s < /dev/null", DockerHostPort)
 		command := exec.Command("/bin/sh", "-c", cmdstring)
 		command.Start()
 		if err := command.Wait(); err == nil {
-			Logger.Println("Docker daemon is started, testing if it is behind firewall")
+			Logger.Println("Docker daemon has started, testing if it's publicly reachable")
 			break
 		} else {
-			Logger.Println("Docker daemon is not started yet. Retry in 2 seconds")
+			Logger.Println("Docker daemon has not started yet. Retrying in 2 seconds")
 			time.Sleep(2 * time.Second)
 		}
 	}
@@ -177,7 +177,7 @@ func isNodeNated() bool {
 		Logger.Printf("Port %s is not publicly reachable", DockerHostPort)
 		return true
 	} else {
-		Logger.Printf("Port %s is publicly reachable, skipping NAT tunnle", DockerHostPort)
+		Logger.Printf("Port %s is publicly reachable, skipping NAT tunnel", DockerHostPort)
 		return false
 	}
 }
