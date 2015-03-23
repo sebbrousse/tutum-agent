@@ -6,7 +6,7 @@
 set -e
 GPG_KEY_ID=A87A2270
 GPG_KEY_STAGING_ID=90E64D7C
-S3_BUCKET=repo-test.tutum.co
+S3_BUCKET=repo-test.tutum.co.s3.amazonaws.com
 TUTUM_HOST=https://app-test.tutum.co/
 export DEBIAN_FRONTEND=noninteractive
 
