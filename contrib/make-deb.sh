@@ -25,7 +25,6 @@ bundle_ubuntu() {
 	cat > $DEST/postinst <<'EOF'
 #!/bin/sh
 set -e
-set -u
 
 if [ -n "$2" ]; then
 	_dh_action=restart
@@ -40,14 +39,30 @@ EOF
 	cat > $DEST/prerm <<'EOF'
 #!/bin/sh
 set -e
-set -u
 
-service tutum-agent stop 2>/dev/null || true
+case "$1" in
+	remove)
+		service tutum-agent stop 2>/dev/null || true
+	;;
+esac
 
 #DEBHELPER#
 EOF
 
-	chmod +x $DEST/postinst $DEST/prerm
+	cat > $DEST/postrm <<'EOF'
+#!/bin/sh
+set -e
+
+case "$1" in
+	remove)
+		rm -fr /usr/bin/docker /usr/lib/tutum
+	;;
+esac
+
+#DEBHELPER#
+EOF
+
+	chmod +x $DEST/postinst $DEST/prerm $DEST/postrm
 
 	(
 		# switch directories so we create *.deb in the right folder
@@ -58,6 +73,7 @@ EOF
 			--name tutum-agent --version $PKGVERSION \
 			--after-install $DEST/postinst \
 			--before-remove $DEST/prerm \
+			--after-remove $DEST/postrm \
 			--architecture "$PACKAGE_ARCHITECTURE" \
 			--prefix / \
 			--description "$PACKAGE_DESCRIPTION" \
@@ -85,7 +101,7 @@ EOF
 			-t deb .
 	)
 
-	rm $DEST/postinst $DEST/prerm
+	rm $DEST/postinst $DEST/prerm $DEST/postrm
 	rm -r $DIR
 }
 
