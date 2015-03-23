@@ -22,7 +22,7 @@ var (
 	DockerProcess             *os.Process
 	ScheduleToTerminateDocker = false
 	DockerBinaryURL           = "https://files.tutum.co/packages/docker/latest.json"
-	NgrokBianryURL            = ""
+	NgrokBinaryURL            = ""
 	NgrokHost                 = ""
 )
 

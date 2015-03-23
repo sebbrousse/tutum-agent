@@ -164,7 +164,7 @@ func handleRegResponse(body []byte, caFilePath, configFilePath string) error {
 	DockerBinaryURL = responseForm.DockerBinaryURL
 
 	if responseForm.NgrokBinaryURL != "" {
-		NgrokBianryURL = responseForm.NgrokBinaryURL
+		NgrokBinaryURL = responseForm.NgrokBinaryURL
 	}
 	// Save to configuration file
 	if isModified {
