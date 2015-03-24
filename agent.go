@@ -27,6 +27,10 @@ func main() {
 	ngrokLogPath := path.Join(LogDir, NgrokLogName)
 	ngrokConfPath := path.Join(TutumHome, NgrokConfName)
 
+	_ = os.MkdirAll(TutumHome, 0755)
+	_ = os.MkdirAll(DockerDir, 0755)
+	_ = os.MkdirAll(LogDir, 0755)
+
 	ParseFlag()
 	SetLogger(path.Join(LogDir, TutumLogFileName))
 
@@ -99,9 +103,9 @@ func main() {
 	StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath)
 
 	if !*FlagStandalone {
-		if NgrokBianryURL != "" {
+		if NgrokBinaryURL != "" {
 			Logger.Println("Downloading NAT tunnel module ...")
-			DownloadNgrok(NgrokBianryURL, ngrokPath)
+			DownloadNgrok(NgrokBinaryURL, ngrokPath)
 		}
 		Logger.Println("Loading NAT tunnel module ...")
 		go NatTunnel(regUrl, ngrokPath, ngrokLogPath, ngrokConfPath)
@@ -129,11 +133,6 @@ func main() {
 }
 
 func PrepareFiles(configFilePath, dockerBinPath, keyFilePath, certFilePath string) {
-	Logger.Println("Creating all necessary folders...")
-	_ = os.MkdirAll(TutumHome, 0755)
-	_ = os.MkdirAll(DockerDir, 0755)
-	_ = os.MkdirAll(LogDir, 0755)
-
 	Logger.Println("Checking if config file exists...")
 	if utils.FileExist(configFilePath) {
 		Logger.Println("Config file exist, skipping")

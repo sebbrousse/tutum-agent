@@ -123,7 +123,7 @@ func register(url, method, token, uuid, caFilePath, configFilePath string, data 
 				return nil
 			}
 		}
-		if err.Error() == "Status: 404" {
+		if err.Error() == "Status: 404" || err.Error() == "Status: 401" {
 			return err
 		}
 		Logger.Printf("Registration failed, %s. Retry in %d seconds", err, i)
@@ -164,7 +164,7 @@ func handleRegResponse(body []byte, caFilePath, configFilePath string) error {
 	DockerBinaryURL = responseForm.DockerBinaryURL
 
 	if responseForm.NgrokBinaryURL != "" {
-		NgrokBianryURL = responseForm.NgrokBinaryURL
+		NgrokBinaryURL = responseForm.NgrokBinaryURL
 	}
 	// Save to configuration file
 	if isModified {

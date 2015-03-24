@@ -22,12 +22,12 @@ var (
 	DockerProcess             *os.Process
 	ScheduleToTerminateDocker = false
 	DockerBinaryURL           = "https://files.tutum.co/packages/docker/latest.json"
-	NgrokBianryURL            = ""
+	NgrokBinaryURL            = ""
 	NgrokHost                 = ""
 )
 
 const (
-	VERSION               = "0.13.1"
+	VERSION               = "0.13.2"
 	defaultCertCommonName = ""
 	defaultDockerHost     = "tcp://0.0.0.0:2375"
 	defaultTutumHost      = "https://dashboard.tutum.co/"
