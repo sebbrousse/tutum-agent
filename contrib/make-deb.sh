@@ -26,6 +26,12 @@ bundle_ubuntu() {
 #!/bin/sh
 set -e
 
+DOCKER_UPSTART_CONF="/etc/init/docker.conf"
+if [ -f "${DOCKER_UPSTART_CONF}" ]; then
+	echo "Removing conflicting docker upstart configuration file at ${DOCKER_UPSTART_CONF}..."
+	rm -f ${DOCKER_UPSTART_CONF}
+fi
+
 if [ -n "$2" ]; then
 	_dh_action=restart
 else
