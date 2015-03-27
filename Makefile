@@ -9,6 +9,7 @@ all: image
 clean:
 	rm -fr build/
 	docker rm -f agentbuild || true
+	docker rmi tutum-agent || true
 
 image:
 	docker build --force-rm --rm -t tutum-agent .

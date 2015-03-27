@@ -1,22 +1,11 @@
-FROM ubuntu:trusty
-
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -qy automake build-essential curl git ruby ruby-dev
-
-# Install Go
-RUN curl -sSL https://go.googlecode.com/files/go1.2.1.src.tar.gz | tar -v -C /usr/local -xz
-ENV PATH /usr/local/go/bin:$PATH
-ENV GOROOT /usr/local/go
-ENV GOPATH /go:/go/src/github.com/tutumcloud/tutum-agent
-
-# Build go toolchain
-RUN cd $GOROOT/src && GOOS=linux GOARCH=amd64 ./make.bash --no-clean 2>&1
+FROM golang:1.4.2
 
 # Install FPM for packaging
-RUN gem install --no-rdoc --no-ri fpm --version 1.0.2
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -qy ruby ruby-dev && \
+	gem install --no-rdoc --no-ri fpm --version 1.0.2
 
-WORKDIR /go/src/github.com/tutumcloud/tutum-agent
-ADD . /go/src/github.com/tutumcloud/tutum-agent
-RUN go get
-RUN go build
+WORKDIR /usr/src/tutum-agent
+ADD . /usr/src/tutum-agent
+RUN go get -d -v && go build -v
 
-CMD ["/go/bin/tutum-agent"]
+CMD ["/usr/src/tutum-agent/tutum-agent"]
