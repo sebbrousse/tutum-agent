@@ -2,7 +2,6 @@ package agent
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -47,6 +46,7 @@ func PostToTutum(url, caFilePath, configFilePath string) error {
 	form.Version = VERSION
 	data, err := json.Marshal(form)
 	if err != nil {
+		SendError(err, "Fatal: Json marshal error", nil)
 		Logger.Fatalln("Cannot marshal the POST form", err)
 	}
 	return register(url, "POST", Conf.TutumToken, Conf.TutumUUID, caFilePath, configFilePath, data)
@@ -57,12 +57,13 @@ func PatchToTutum(url, caFilePath, certFilePath, configFilePath string) error {
 	form.Version = VERSION
 	cert, err := GetCertificate(certFilePath)
 	if err != nil {
+		SendError(err, "Fatal: Failed to load public certificate", nil)
 		Logger.Fatal("Cannot read public certificate:", err)
-		form.Public_cert = ""
 	}
 	form.Public_cert = *cert
 	data, err := json.Marshal(form)
 	if err != nil {
+		SendError(err, "Fatal: Json marshal error", nil)
 		Logger.Fatalln("Cannot marshal the PATCH form", err)
 	}
 
@@ -74,10 +75,12 @@ func VerifyRegistration(url string) {
 		"Content-Type application/json"}
 	body, err := SendRequest("GET", utils.JoinURL(url, Conf.TutumUUID), nil, headers)
 	if err != nil {
+		SendError(err, "SendRequest error", nil)
 		Logger.Printf("Get registration info error, %s", err)
 	} else {
 		var form RegGetForm
 		if err = json.Unmarshal(body, &form); err != nil {
+			SendError(err, "Json unmarshal error", nil)
 			Logger.Println("Cannot unmarshal the response", err)
 		} else {
 			if form.State == "Deployed" {
@@ -91,10 +94,12 @@ func VerifyRegistration(url string) {
 
 	body, err = SendRequest("GET", utils.JoinURL(url, Conf.TutumUUID), nil, headers)
 	if err != nil {
+		SendError(err, "Failed to get registartion info after 5 mins", nil)
 		Logger.Printf("Get registration info error, %s", err)
 	} else {
 		var form RegGetForm
 		if err = json.Unmarshal(body, &form); err != nil {
+			SendError(err, "Json unmarshal error", nil)
 			Logger.Println("Cannot unmarshal the response", err)
 		} else {
 			if form.State == "Deployed" {
@@ -121,11 +126,16 @@ func register(url, method, token, uuid, caFilePath, configFilePath string, data 
 		if err == nil {
 			if err = handleRegResponse(body, caFilePath, configFilePath); err == nil {
 				return nil
+			} else {
+				Logger.Printf("Failed to handle the registration response, %s. Retry in %d seconds", err, i)
+				time.Sleep(time.Duration(i) * time.Second)
+				continue
 			}
 		}
-		if err.Error() == "Status: 404" || err.Error() == "Status: 401" {
+		if method == "PATCH" && (err.Error() == "Status: 404" || err.Error() == "Status: 401") {
 			return err
 		}
+		SendError(err, "Registion HTTP error", nil)
 		Logger.Printf("Registration failed, %s. Retry in %d seconds", err, i)
 		time.Sleep(time.Duration(i) * time.Second)
 	}
@@ -141,12 +151,16 @@ func sendRegRequest(url, method, token, uuid string, data []byte) ([]byte, error
 func handleRegResponse(body []byte, caFilePath, configFilePath string) error {
 	var responseForm RegResponseForm
 
-	// Save ca cert file
+	// Save user ca cert file
 	if err := json.Unmarshal(body, &responseForm); err != nil {
-		return errors.New("Cannot unmarshal json from response")
+		SendError(err, "Json unmarshal error", nil)
+		Logger.Println("Failed to unmarshal the response", err)
+		return err
 	}
 	if err := ioutil.WriteFile(caFilePath, []byte(responseForm.UserCaCert), 0644); err != nil {
-		Logger.Print("Failed to save "+caFilePath, err)
+		SendError(err, "Failed to save user ca cert file", nil)
+		Logger.Println("Failed to save", caFilePath, err)
+		return err
 	}
 	// Update global Conf
 	isModified := false

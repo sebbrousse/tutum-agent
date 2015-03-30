@@ -2,6 +2,7 @@ package agent
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -42,6 +43,7 @@ func NatTunnel(url, ngrokPath, ngrokLogPath, ngrokConfPath string) {
 	} else {
 		Logger.Println("About to tunnel to private ngrok service")
 		if !utils.FileExist(ngrokConfPath) {
+			SendError(errors.New("Cannot find ngrok conf"), "Cannot find ngrok conf file", nil)
 			Logger.Println("Cannot find ngrok conf, skipping NAT tunnel")
 			return
 		}
@@ -55,6 +57,7 @@ func NatTunnel(url, ngrokPath, ngrokLogPath, ngrokConfPath string) {
 	os.RemoveAll(ngrokLogPath)
 	logFile, err := os.OpenFile(ngrokLogPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
+		SendError(err, "Failed to open ngrok log file", nil)
 		Logger.Println(err)
 	} else {
 		defer logFile.Close()
@@ -72,12 +75,13 @@ func NatTunnel(url, ngrokPath, ngrokLogPath, ngrokConfPath string) {
 	}
 }
 
-func runGronk(cmd *exec.Cmd) bool {
+func runGronk(cmd *exec.Cmd) {
 	if err := cmd.Start(); err != nil {
-		return true
+		SendError(err, "Failed to run ngrok client", nil)
+		Logger.Println(err)
+		return
 	}
 	cmd.Wait()
-	return true
 }
 
 func monitorTunnels(url, ngrokLogPath string) {
@@ -101,6 +105,7 @@ func patchTunnelToTutum(url, tunnel string) {
 	form.Tunnel = tunnel
 	data, err := json.Marshal(form)
 	if err != nil {
+		SendError(err, "Json marshal error", nil)
 		Logger.Printf("Cannot marshal the TunnelPatch form:%s\f", err)
 	}
 
@@ -108,6 +113,7 @@ func patchTunnelToTutum(url, tunnel string) {
 		"Content-Type", "application/json"}
 	_, err = SendRequest("PATCH", utils.JoinURL(url, Conf.TutumUUID), data, headers)
 	if err != nil {
+		SendError(err, "Failed to patch tunnel address to Tutum", nil)
 		Logger.Println("Failed to patch tunnel address to Tutum,", err)
 	} else {
 		Logger.Println("Successfully Patched tunnel address to Tutum")
@@ -127,6 +133,7 @@ func createNgrokConfFile(ngrokConfPath string) {
 	ngrokConfStr := fmt.Sprintf("server_addr: %s\ntrust_host_root_certs: false", NgrokHost)
 	Logger.Printf("Creating ngrok config file in %s ...", ngrokConfPath)
 	if err := ioutil.WriteFile(ngrokConfPath, []byte(ngrokConfStr), 0666); err != nil {
+		SendError(err, "Failed to create ngrok config file", nil)
 		Logger.Println("Cannot create ngrok config file:", err)
 	}
 }
@@ -140,10 +147,12 @@ func updateNgrokHost(url string) {
 		"Content-Type application/json"}
 	body, err := SendRequest("GET", utils.JoinURL(url, Conf.TutumUUID), nil, headers)
 	if err != nil {
+		SendError(err, "SendRequest error", nil)
 		Logger.Printf("Get registration info error, %s", err)
 	} else {
 		var form RegGetForm
 		if err = json.Unmarshal(body, &form); err != nil {
+			SendError(err, "Json unmarshal error", nil)
 			Logger.Println("Cannot unmarshal the response", err)
 		} else {
 			if form.NgrokHost != "" {

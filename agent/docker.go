@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"code.google.com/p/go-shlex"
-
 	"github.com/tutumcloud/tutum-agent/utils"
 )
 
@@ -85,14 +84,17 @@ func UpdateDocker(dockerBinPath, dockerNewBinPath, dockerNewBinSigPath, keyFileP
 			StopDocker()
 			Logger.Println("Removing old docker binary")
 			if err := os.RemoveAll(dockerBinPath); err != nil {
+				SendError(err, "Failed to remove the old docker binary", nil)
 				Logger.Println("Cannot remove old docker binary:", err)
 			}
 			Logger.Println("Renaming new docker binary")
 			if err := os.Rename(dockerNewBinPath, dockerBinPath); err != nil {
+				SendError(err, "Failed to rename the docker binary", nil)
 				Logger.Println("Cannot rename docker binary:", err)
 			}
 			Logger.Println("Removing the signature file", dockerNewBinSigPath)
 			if err := os.RemoveAll(dockerNewBinSigPath); err != nil {
+				SendError(err, "Failed to remove the docker sig file", nil)
 				Logger.Println(err)
 			}
 			createDockerSymlink(dockerBinPath, DockerSymbolicLink)
@@ -103,10 +105,12 @@ func UpdateDocker(dockerBinPath, dockerNewBinPath, dockerNewBinSigPath, keyFileP
 			Logger.Println("New docker binary signature cannot be verified. Update is rejected!")
 			Logger.Println("Removing the invalid docker binary", dockerNewBinPath)
 			if err := os.RemoveAll(dockerNewBinPath); err != nil {
+				SendError(err, "Failed to remove the invalid docker binary", nil)
 				Logger.Println(err)
 			}
 			Logger.Println("Removing the invalid signature file", dockerNewBinSigPath)
 			if err := os.RemoveAll(dockerNewBinSigPath); err != nil {
+				SendError(err, "Failed to remove the invalid docker sig file", nil)
 				Logger.Println(err)
 			}
 			Logger.Println("Failed to update docker binary")
@@ -118,6 +122,7 @@ func verifyDockerSig(dockerNewBinPath, dockerNewBinSigPath string) bool {
 	cmd := exec.Command("gpg", "--verify", dockerNewBinSigPath, dockerNewBinPath)
 	err := cmd.Run()
 	if err != nil {
+		SendError(err, "GPG verfication failed", nil)
 		Logger.Println("GPG verfication failed:", err)
 		return false
 	}
@@ -128,10 +133,12 @@ func verifyDockerSig(dockerNewBinPath, dockerNewBinSigPath string) bool {
 func createDockerSymlink(dockerBinPath, dockerSymbolicLink string) {
 	Logger.Println("Removing the docker symbolic link from", dockerSymbolicLink)
 	if err := os.RemoveAll(DockerSymbolicLink); err != nil {
+		SendError(err, "Failed to remove the old docker symbolic link", nil)
 		Logger.Println(err)
 	}
 	Logger.Println("Creating the docker symbolic link to", dockerSymbolicLink)
 	if err := os.Symlink(dockerBinPath, DockerSymbolicLink); err != nil {
+		SendError(err, "Failed to create docker symbolic link", nil)
 		Logger.Println(err)
 	}
 }
@@ -142,6 +149,7 @@ func runDocker(cmd *exec.Cmd) {
 	Logger.Println("Setting docker log to", dockerLog)
 	f, err := os.OpenFile(dockerLog, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
+		SendError(err, "Failed to set docker log file", nil)
 		Logger.Println(err)
 		Logger.Println("Cannot set docker log to", dockerLog)
 	} else {
@@ -153,6 +161,7 @@ func runDocker(cmd *exec.Cmd) {
 	Logger.Println("Starting docker daemon:", cmd.Args)
 
 	if err := cmd.Start(); err != nil {
+		SendError(err, "Failed to start docker daemon", nil)
 		Logger.Println("Cannot start docker daemon:", err)
 	}
 	DockerProcess = cmd.Process
@@ -166,6 +175,16 @@ func runDocker(cmd *exec.Cmd) {
 	go decreaseDockerChildProcessPriority(exit_renice)
 
 	if err := cmd.Wait(); err != nil {
+		out, tailErr := exec.Command("tail", "-n", "50", dockerLog).Output()
+		if tailErr != nil {
+			SendError(tailErr, "Failed to tail docker logs when docker terminates unexpectedly", nil)
+			Logger.Printf("Failed to tail docker logs when docker terminates unexpectedly: %s", err)
+			SendError(err, "Docker daemon terminates unexpectedly", nil)
+		} else {
+			extra := map[string]interface{}{"docker-log": string(out)}
+			SendError(err, "Docker daemon terminates unexpectedly", extra)
+		}
+
 		Logger.Println("Docker daemon died with error:", err)
 	}
 	exit_renice <- 1
@@ -183,6 +202,7 @@ func decreaseDockerChildProcessPriority(exit_renice chan int) {
 		default:
 			out, err := exec.Command("ps", "axo", "pid,ppid,ni").Output()
 			if err != nil {
+				SendError(err, "Failed to run ps command", nil)
 				Logger.Println(err)
 				time.Sleep(ReniceSleepTime * time.Second)
 				continue

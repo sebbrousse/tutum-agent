@@ -87,7 +87,9 @@ func main() {
 
 			Logger.Printf("Registering in Tutum via PATCH: %s ...\n",
 				regUrl+Conf.TutumUUID)
-			PatchToTutum(regUrl, caFilePath, certFilePath, configFilePath)
+			if err = PatchToTutum(regUrl, caFilePath, certFilePath, configFilePath); err != nil {
+				SendError(err, "Registion HTTP error", nil)
+			}
 		}
 	}
 	Logger.Println("Check if docker binary exists...")
@@ -140,6 +142,7 @@ func PrepareFiles(configFilePath, dockerBinPath, keyFilePath, certFilePath strin
 		Logger.Println("Creating a new config file")
 		LoadDefaultConf()
 		if err := SaveConf(configFilePath, Conf); err != nil {
+			SendError(err, "Failed to save config to the conf file", nil)
 			Logger.Fatalln(err)
 		}
 	}
@@ -147,6 +150,7 @@ func PrepareFiles(configFilePath, dockerBinPath, keyFilePath, certFilePath strin
 	Logger.Println("Loading Configuration file...")
 	conf, err := LoadConf(configFilePath)
 	if err != nil {
+		SendError(err, "Failed to load configuration file", nil)
 		Logger.Fatalln("Failed to load configuration file:", err)
 	} else {
 		Conf = *conf
