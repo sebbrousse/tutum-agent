@@ -56,9 +56,10 @@ const (
 	DockerDefaultHost = "unix:///var/run/docker.sock"
 
 	MaxWaitingTime    = 200 //seconds
-	HeartBeatInterval = 5   //second
+	HeartBeatInterval = 5   //seconds
 
-	RenicePriority = -10
+	RenicePriority  = -10
+	ReniceSleepTime = 5 //seconds
 
 	DockerHostPort = "2375"
 )

@@ -184,6 +184,7 @@ func decreaseDockerChildProcessPriority(exit_renice chan int) {
 			out, err := exec.Command("ps", "axo", "pid,ppid,ni").Output()
 			if err != nil {
 				Logger.Println(err)
+				time.Sleep(ReniceSleepTime * time.Second)
 				continue
 			}
 			lines := strings.Split(string(out), "\n")
@@ -219,7 +220,7 @@ func decreaseDockerChildProcessPriority(exit_renice chan int) {
 					}
 				}
 			}
-			time.Sleep(5 * time.Second)
+			time.Sleep(ReniceSleepTime * time.Second)
 		}
 	}
 }
