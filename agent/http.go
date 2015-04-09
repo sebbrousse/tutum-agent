@@ -101,18 +101,12 @@ func HttpGet(url string) ([]byte, error) {
 }
 
 func downloadFile(url, path, name string) {
-
 	Logger.Printf("Downloading %s definition from %s", name, url)
 	def := downloadTargetDef(url)
-	Logger.Printf("Successfully downloaded %s definition", name)
 
 	Logger.Printf("Downloading %s from %s", name, def.Download_url)
 	data := downloadTarget(def)
-	Logger.Printf("Successfully downloaded %s", name)
-
-	Logger.Printf("Writing %s to %s", name, path)
 	writeToFile(data, path)
-
 }
 
 func downloadTargetDef(url string) *TargetDef {
@@ -178,7 +172,6 @@ func getTarget(def *TargetDef) ([]byte, error) {
 	md5hasher := md5.New()
 	md5hasher.Write(b)
 	md5s := hex.EncodeToString(md5hasher.Sum(nil))
-	Logger.Println("Checksum of the downloaded target, md5:", md5s)
 	md5b, err := HttpGet(def.Checksum_md5_url)
 	if err != nil {
 		SendError(err, "HTTP get error", nil)
@@ -190,13 +183,11 @@ func getTarget(def *TargetDef) ([]byte, error) {
 			return nil, errors.New("Failed to pass md5 checksum test")
 		}
 	}
-	Logger.Println("Target passed md5 checksum check")
 
 	//validate sha256 checksum of the target
 	sha256hasher := sha256.New()
 	sha256hasher.Write(b)
 	sha256s := hex.EncodeToString(sha256hasher.Sum(nil))
-	Logger.Println("Checksum of the downloaded target, sha256:", sha256s)
 	sha256b, err := HttpGet(def.Checksum_sha256_url)
 	if err != nil {
 		SendError(err, "HTTP error", nil)
@@ -208,7 +199,6 @@ func getTarget(def *TargetDef) ([]byte, error) {
 			return nil, errors.New("Failed to pass sha256 checksum test")
 		}
 	}
-	Logger.Println("Target passed sha256 checksum check")
 
 	return b, nil
 }

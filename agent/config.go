@@ -150,8 +150,6 @@ func LoadDefaultConf() {
 func SetLogger(logFile string) {
 	if *FlagLogToStdout {
 		Logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
-		Logger.Println("Set logger to stdout")
-
 	} else {
 		f, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
@@ -161,8 +159,5 @@ func SetLogger(logFile string) {
 			f = os.Stdout
 		}
 		Logger = log.New(f, "", log.Ldate|log.Ltime)
-		if f != os.Stdout {
-			Logger.Println("Set logger to", logFile)
-		}
 	}
 }

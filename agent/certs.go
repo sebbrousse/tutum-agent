@@ -20,15 +20,12 @@ import (
 )
 
 func CreateCerts(keyFilePath, certFilePath, host string) {
-	if isCertificateExist(keyFilePath, certFilePath) {
-		Logger.Println("TLS certificate exists, skipping")
-	} else {
+	if !isCertificateExist(keyFilePath, certFilePath) {
 		if host == "" {
-			Logger.Fatalln("CertCommonName is empty. This may be caused by failure on POSTing to Tutum.")
+			Logger.Fatalln("CertCommonName is empty. This may be caused by a failed node registration with Tutum")
 		}
-		Logger.Println("No tls certificate founds, creating a new one using CN:", host)
 		genCetificate(keyFilePath, certFilePath, host)
-		Logger.Println("New tls certificate is generated")
+		Logger.Println("New TLS certificates generated")
 	}
 }
 
@@ -47,7 +44,7 @@ func genCetificate(keyFilePath, certFilePath, host string) {
 	priv, err := rsa.GenerateKey(rand.Reader, rsaBits)
 	if err != nil {
 		SendError(err, "Fatal: Failed to generate private key", nil)
-		Logger.Fatalf("Fatal: Failed to generate private key: %s", err)
+		Logger.Fatalf("Failed to generate private key: %s", err)
 	}
 
 	notBefore := time.Now()
@@ -101,7 +98,6 @@ func genCetificate(keyFilePath, certFilePath, host string) {
 	}
 	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
 	certOut.Close()
-	Logger.Printf("Written certificate to %s", certFilePath)
 
 	keyOut, err := os.OpenFile(keyFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
@@ -111,7 +107,6 @@ func genCetificate(keyFilePath, certFilePath, host string) {
 	}
 	pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
 	keyOut.Close()
-	Logger.Printf("Written %s", keyFilePath)
 }
 
 func GetCertificate(certFilePath string) (*string, error) {

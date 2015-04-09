@@ -182,7 +182,7 @@ func handleRegResponse(body []byte, caFilePath, configFilePath string) error {
 	}
 	// Save to configuration file
 	if isModified {
-		Logger.Println("Updating configuration file ...")
+		Logger.Println("Updating configuration file...")
 		return SaveConf(configFilePath, Conf)
 	}
 	return nil
