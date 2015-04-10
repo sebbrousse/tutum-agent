@@ -85,6 +85,7 @@ func SendRequest(method, url string, data_bytes []byte, headers []string) ([]byt
 func HttpGet(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
+		SendError(err, "HTTP get error", nil)
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -100,18 +101,12 @@ func HttpGet(url string) ([]byte, error) {
 }
 
 func downloadFile(url, path, name string) {
-
 	Logger.Printf("Downloading %s definition from %s", name, url)
 	def := downloadTargetDef(url)
-	Logger.Printf("Successfully downloaded %s definition", name)
 
 	Logger.Printf("Downloading %s from %s", name, def.Download_url)
 	data := downloadTarget(def)
-	Logger.Printf("Successfully downloaded %s", name)
-
-	Logger.Printf("Writing %s to %s", name, path)
 	writeToFile(data, path)
-
 }
 
 func downloadTargetDef(url string) *TargetDef {
@@ -124,7 +119,6 @@ func downloadTargetDef(url string) *TargetDef {
 			Logger.Printf("Cannot get target definition: %s. Retry in %d second", err, i)
 			time.Sleep(time.Duration(i) * time.Second)
 			def, err = getTargetDef(url)
-
 		} else {
 			break
 		}
@@ -136,12 +130,15 @@ func getTargetDef(url string) (*TargetDef, error) {
 	var def TargetDef
 	body, err := HttpGet(url)
 	if err != nil {
+		SendError(err, "HTTP get error", nil)
 		return nil, err
 	}
 	if err = json.Unmarshal(body, &def); err != nil {
+		SendError(err, "json unmarshal error", nil)
 		return nil, err
 	}
 	if def == (TargetDef{}) {
+		SendError(errors.New("Wrong target definition"), "Wrong target definition", nil)
 		return nil, errors.New("Wrong target definition")
 	}
 	return &def, nil
@@ -157,7 +154,6 @@ func downloadTarget(def *TargetDef) []byte {
 			Logger.Printf("Cannot get target: %s. Retry in %d second", err, i)
 			time.Sleep(time.Duration(i) * time.Second)
 			b, err = getTarget(def)
-
 		} else {
 			break
 		}
@@ -168,6 +164,7 @@ func downloadTarget(def *TargetDef) []byte {
 func getTarget(def *TargetDef) ([]byte, error) {
 	b, err := HttpGet(def.Download_url)
 	if err != nil {
+		SendError(err, "HTTP get error", nil)
 		return nil, err
 	}
 
@@ -175,33 +172,33 @@ func getTarget(def *TargetDef) ([]byte, error) {
 	md5hasher := md5.New()
 	md5hasher.Write(b)
 	md5s := hex.EncodeToString(md5hasher.Sum(nil))
-	Logger.Println("Checksum of the downloaded target, md5:", md5s)
 	md5b, err := HttpGet(def.Checksum_md5_url)
 	if err != nil {
+		SendError(err, "HTTP get error", nil)
 		Logger.Println("Failed to get md5 for the target")
 		return nil, err
 	} else {
 		if !strings.Contains(string(md5b), md5s) {
+			SendError(errors.New("Failed to pass md5 checksum test"), "Failed on md5 checksum test", nil)
 			return nil, errors.New("Failed to pass md5 checksum test")
 		}
 	}
-	Logger.Println("Target passed md5 checksum check")
 
 	//validate sha256 checksum of the target
 	sha256hasher := sha256.New()
 	sha256hasher.Write(b)
 	sha256s := hex.EncodeToString(sha256hasher.Sum(nil))
-	Logger.Println("Checksum of the downloaded target, sha256:", sha256s)
 	sha256b, err := HttpGet(def.Checksum_sha256_url)
 	if err != nil {
+		SendError(err, "HTTP error", nil)
 		Logger.Println("Failed to get sha256 for the target")
 		return nil, err
 	} else {
 		if !strings.Contains(string(sha256b), sha256s) {
+			SendError(errors.New("Failed to pass sha256 checksum test"), "Failed on sha256 checksum test", nil)
 			return nil, errors.New("Failed to pass sha256 checksum test")
 		}
 	}
-	Logger.Println("Target passed sha256 checksum check")
 
 	return b, nil
 }
@@ -213,6 +210,7 @@ func writeToFile(binary []byte, path string) {
 			i = 1
 		}
 		if err != nil {
+			SendError(err, "Failed to write to file", nil)
 			Logger.Printf("Failed to save the target: %s. Retrying in %d second", err, i)
 			time.Sleep(time.Duration(i) * time.Second)
 			err = ioutil.WriteFile(path, binary, 0755)

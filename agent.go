@@ -33,26 +33,21 @@ func main() {
 
 	ParseFlag()
 	SetLogger(path.Join(LogDir, TutumLogFileName))
-
-	Logger.Println("Preparing directories and files...")
 	PrepareFiles(configFilePath, dockerBinPath, keyFilePath, certFilePath)
-
 	SetConfigFile(configFilePath)
 
 	regUrl := utils.JoinURL(Conf.TutumHost, RegEndpoint)
 	if Conf.TutumUUID == "" {
-		Logger.Printf("Removing all existing cert and key files %s\n", regUrl)
 		os.RemoveAll(keyFilePath)
 		os.RemoveAll(certFilePath)
 		os.RemoveAll(caFilePath)
 
 		if !*FlagStandalone {
-			Logger.Printf("Registering in Tutum via POST: %s ...\n", regUrl)
+			Logger.Printf("Registering in Tutum via POST: %s...\n", regUrl)
 			PostToTutum(regUrl, caFilePath, configFilePath)
 		}
 	}
 
-	Logger.Println("Checking if TLS certificate exists...")
 	if *FlagStandalone {
 		commonName := Conf.CertCommonName
 		if commonName == "" {
@@ -64,39 +59,32 @@ func main() {
 	}
 
 	if !*FlagStandalone {
-		Logger.Printf("Registering in Tutum via PATCH: %s ...\n",
+		Logger.Printf("Registering in Tutum via PATCH: %s...\n",
 			regUrl+Conf.TutumUUID)
 		err := PatchToTutum(regUrl, caFilePath, certFilePath, configFilePath)
 		if err != nil {
-			Logger.Printf("TutumUUID (%s) is invalid, trying to allocate a new one ...\n", Conf.TutumUUID)
-			Logger.Printf("Clearing invalid TutumUUID:%s ...\n", Conf.TutumUUID)
+			Logger.Printf("TutumUUID (%s) is invalid, trying to allocate a new one...\n", Conf.TutumUUID)
 			Conf.TutumUUID = ""
-			Logger.Print("Saving configuation to file ...")
 			SaveConf(configFilePath, Conf)
 
-			Logger.Printf("Removing all existing cert and key files", regUrl)
 			os.RemoveAll(keyFilePath)
 			os.RemoveAll(certFilePath)
 			os.RemoveAll(caFilePath)
 
-			Logger.Printf("Registering in Tutum via POST: %s ...\n", regUrl)
+			Logger.Printf("Registering in Tutum via POST: %s...\n", regUrl)
 			PostToTutum(regUrl, caFilePath, configFilePath)
 
-			Logger.Println("Checking if TLS certificate exists...")
 			CreateCerts(keyFilePath, certFilePath, Conf.CertCommonName)
 
-			Logger.Printf("Registering in Tutum via PATCH: %s ...\n",
+			Logger.Printf("Registering in Tutum via PATCH: %s...\n",
 				regUrl+Conf.TutumUUID)
-			PatchToTutum(regUrl, caFilePath, certFilePath, configFilePath)
+			if err = PatchToTutum(regUrl, caFilePath, certFilePath, configFilePath); err != nil {
+				SendError(err, "Registion HTTP error", nil)
+			}
 		}
 	}
-	Logger.Println("Check if docker binary exists...")
 	DownloadDocker(DockerBinaryURL, dockerBinPath)
-
-	Logger.Println("Setting system signals...")
 	HandleSig()
-
-	Logger.Printf("Renicing tutum agent to priority %d\n", RenicePriority)
 	syscall.Setpriority(syscall.PRIO_PROCESS, os.Getpid(), RenicePriority)
 
 	Logger.Println("Starting docker daemon...")
@@ -104,15 +92,15 @@ func main() {
 
 	if !*FlagStandalone {
 		if NgrokBinaryURL != "" {
-			Logger.Println("Downloading NAT tunnel module ...")
+			Logger.Println("Downloading NAT tunnel module...")
 			DownloadNgrok(NgrokBinaryURL, ngrokPath)
 		}
-		Logger.Println("Loading NAT tunnel module ...")
+		Logger.Println("Loading NAT tunnel module...")
 		go NatTunnel(regUrl, ngrokPath, ngrokLogPath, ngrokConfPath)
 	}
 
 	if !*FlagStandalone {
-		Logger.Println("Verifying the registration with Tutum ...")
+		Logger.Println("Verifying the registration with Tutum...")
 		go VerifyRegistration(regUrl)
 	}
 
@@ -134,12 +122,10 @@ func main() {
 
 func PrepareFiles(configFilePath, dockerBinPath, keyFilePath, certFilePath string) {
 	Logger.Println("Checking if config file exists...")
-	if utils.FileExist(configFilePath) {
-		Logger.Println("Config file exist, skipping")
-	} else {
-		Logger.Println("Creating a new config file")
+	if !utils.FileExist(configFilePath) {
 		LoadDefaultConf()
 		if err := SaveConf(configFilePath, Conf); err != nil {
+			SendError(err, "Failed to save config to the conf file", nil)
 			Logger.Fatalln(err)
 		}
 	}
@@ -147,6 +133,7 @@ func PrepareFiles(configFilePath, dockerBinPath, keyFilePath, certFilePath strin
 	Logger.Println("Loading Configuration file...")
 	conf, err := LoadConf(configFilePath)
 	if err != nil {
+		SendError(err, "Failed to load configuration file", nil)
 		Logger.Fatalln("Failed to load configuration file:", err)
 	} else {
 		Conf = *conf

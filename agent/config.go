@@ -88,6 +88,7 @@ func SetConfigFile(configFilePath string) {
 		}
 	}
 	if err := SaveConf(configFilePath, Conf); err != nil {
+		SendError(err, "Failed to save config to the conf file", nil)
 		fmt.Fprintf(os.Stderr, err.Error())
 		os.Exit(1)
 	}
@@ -149,18 +150,14 @@ func LoadDefaultConf() {
 func SetLogger(logFile string) {
 	if *FlagLogToStdout {
 		Logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
-		Logger.Println("Set logger to stdout")
-
 	} else {
 		f, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
+			SendError(err, "Failed to open tutum log file", nil)
 			log.Println(err)
 			log.Println("Log to stdout instead")
 			f = os.Stdout
 		}
 		Logger = log.New(f, "", log.Ldate|log.Ltime)
-		if f != os.Stdout {
-			Logger.Println("Set logger to", logFile)
-		}
 	}
 }

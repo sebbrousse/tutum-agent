@@ -27,7 +27,7 @@ var (
 )
 
 const (
-	VERSION               = "0.13.3"
+	VERSION               = "0.14.0"
 	defaultCertCommonName = ""
 	defaultDockerHost     = "tcp://0.0.0.0:2375"
 	defaultTutumHost      = "https://dashboard.tutum.co/"
@@ -56,9 +56,10 @@ const (
 	DockerDefaultHost = "unix:///var/run/docker.sock"
 
 	MaxWaitingTime    = 200 //seconds
-	HeartBeatInterval = 5   //second
+	HeartBeatInterval = 5   //seconds
 
-	RenicePriority = -10
+	RenicePriority  = -10
+	ReniceSleepTime = 5 //seconds
 
 	DockerHostPort = "2375"
 )
