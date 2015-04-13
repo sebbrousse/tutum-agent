@@ -22,6 +22,7 @@ func ParseFlag() {
 	FlagDebugMode = flag.Bool("debug", false, "Enable debug mode")
 	FlagLogToStdout = flag.Bool("stdout", false, "Print log to stdout")
 	FlagStandalone = flag.Bool("standalone", false, "Standalone mode, skipping reg with tutum")
+	FlagSkipNatTunnel = flag.Bool("skip-nat-tunnel", false, "Skip NAT tunnel")
 	FlagDockerHost = flag.String("docker-host", "", "Override 'DockerHost'")
 	FlagDockerOpts = flag.String("docker-opts", "", "Add additional flags to run docker daemon")
 	FlagTutumHost = flag.String("tutum-host", "", "Override 'TutumHost'")
