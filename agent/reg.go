@@ -132,10 +132,14 @@ func register(url, method, token, uuid, caFilePath, configFilePath string, data 
 				continue
 			}
 		}
-		if method == "PATCH" && (err.Error() == "Status: 404" || err.Error() == "Status: 401") {
+		if method == "POST" && (err.Error() == "401") {
+			SendError(err, "Registration unauthorisized: POST", nil)
+			Logger.Fatalln("Cannot register(POST) to tutum: 401 Unauthorized")
+		}
+		if method == "PATCH" && (err.Error() == "404" || err.Error() == "401") {
 			return err
 		}
-		SendError(err, "Registion HTTP error", nil)
+		SendError(err, "Registration HTTP error", nil)
 		Logger.Printf("Registration failed, %s. Retry in %d seconds", err, i)
 		time.Sleep(time.Duration(i) * time.Second)
 	}

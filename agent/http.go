@@ -77,7 +77,7 @@ func SendRequest(method, url string, data_bytes []byte, headers []string) ([]byt
 			b, _ := ioutil.ReadAll(resp.Body)
 			Logger.Println("=> Body:", string(b))
 		}
-		err_msg := fmt.Sprintf("Status: %d", resp.StatusCode)
+		err_msg := fmt.Sprintf("%d", resp.StatusCode)
 		return nil, errors.New(err_msg)
 	}
 }
