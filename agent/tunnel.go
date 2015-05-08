@@ -91,7 +91,9 @@ func monitorTunnels(url, ngrokLogPath string) {
 			terms := strings.Split(line.Text, " ")
 			tunnel := terms[len(terms)-1]
 			Logger.Printf("Found new tunnel: %s", tunnel)
-			patchTunnelToTutum(url, tunnel)
+			if tunnel != "" {
+				patchTunnelToTutum(url, tunnel)
+			}
 		}
 	}
 }
