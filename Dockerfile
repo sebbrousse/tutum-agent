@@ -1,7 +1,7 @@
 FROM golang:1.4.2
 
 # Install FPM for packaging
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -qy ruby ruby-dev && \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -qy ruby ruby-dev rpm && \
 	gem install --no-rdoc --no-ri fpm --version 1.0.2
 
 ENV GOPATH /go

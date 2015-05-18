@@ -17,12 +17,12 @@ bundle_redhat() {
   mkdir -p $DIR/etc/init
   mkdir -p $DIR/etc/init.d
   cp contrib/upstart/tutum-agent.conf $DIR/etc/init/
-  cp -v contrib/init.d/tutum-agent $DIR/etc/init.d/
+  cp contrib/init.d/tutum-agent $DIR/etc/init.d/
 
   # Copy the binary
   # This will fail if the binary bundle hasn't been built
   mkdir -p $DIR/usr/bin
-  cp -p /build/bin/linux/$PACKAGE_ARCHITECTURE/tutum-agent-$PKGVERSION $DIR/usr/bin/tutum-agent
+  cp /build/bin/linux/$PACKAGE_ARCHITECTURE/tutum-agent-$PKGVERSION $DIR/usr/bin/tutum-agent
 
   cat > $DEST/postinst <<'EOF'
 #!/bin/sh
@@ -76,7 +76,6 @@ EOF
     # switch directories so we create *.deb in the right folder
     cd $DEST
 
-    apt-get install -y rpm
     # create tutum-agent-$PKGVERSION package
     fpm -s dir -C $DIR \
       --name tutum-agent --version $PKGVERSION \
@@ -87,35 +86,25 @@ EOF
       --prefix / \
       --description "$PACKAGE_DESCRIPTION" \
       --maintainer "$PACKAGE_MAINTAINER" \
-      -t rpm . \
       --conflicts docker \
       --conflicts docker.io \
       --conflicts lxc-docker \
-      --depends cgroup-lite \
-      --depends aufs-tools \
+      --depends "/bin/sh" \
       --depends iptables \
-      --depends "libapparmor1 >= 2.6~devel" \
-      --depends "libc6 >= 2.4" \
-      --depends "libdevmapper1.02.1 >= 2:1.02.63" \
-      --depends "libsqlite3-0 >= 3.5.9" \
-      --depends perl \
       --depends gnupg \
-      --depends "sysv-rc >= 2.88dsf-24" \
-      --depends xz-utils \
-      --config-files "etc/init/tutum-agent.conf" \
-      --config-files "etc/init.d/tutum-agent" \
-      --conflicts docker \
-      --conflicts docker.io \
-      --conflicts lxc-docker \
-      --depends iptables \
-      --depends "device-mapper-libs" \
-      --depends perl \
-      --depends gnupg \
+      --depends libc.so.6 \
+      --depends libcgroup \
+      --depends libpthread.so.0 \
+      --depends libsqlite3.so.0 \
+      --depends tar \
       --depends xz \
+      --depends "device-mapper-libs >= 1.02.90-1" \
       --provides tutum-agent \
       --replaces tutum-agent \
       --url "$PACKAGE_URL" \
       --license "$PACKAGE_LICENSE" \
+      --config-files "etc/init/tutum-agent.conf" \
+      --config-files "etc/init.d/tutum-agent" \
       -t rpm .
   )
 
