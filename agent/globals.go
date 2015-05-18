@@ -6,16 +6,17 @@ import (
 )
 
 var (
-	FlagDebugMode   *bool
-	FlagLogToStdout *bool
-	FlagStandalone  *bool
-	FlagDockerHost  *string
-	FlagDockerOpts  *string
-	FlagTutumHost   *string
-	FlagTutumToken  *string
-	FlagTutumUUID   *string
-	FlagNgrokToken  *string
-	FlagNgrokHost   *string
+	FlagDebugMode     *bool
+	FlagLogToStdout   *bool
+	FlagStandalone    *bool
+	FlagSkipNatTunnel *bool
+	FlagDockerHost    *string
+	FlagDockerOpts    *string
+	FlagTutumHost     *string
+	FlagTutumToken    *string
+	FlagTutumUUID     *string
+	FlagNgrokToken    *string
+	FlagNgrokHost     *string
 
 	Conf                      Configuration
 	Logger                    *log.Logger
@@ -27,7 +28,7 @@ var (
 )
 
 const (
-	VERSION               = "0.14.0"
+	VERSION               = "0.15.0"
 	defaultCertCommonName = ""
 	defaultDockerHost     = "tcp://0.0.0.0:2375"
 	defaultTutumHost      = "https://dashboard.tutum.co/"

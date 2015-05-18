@@ -94,7 +94,7 @@ func VerifyRegistration(url string) {
 
 	body, err = SendRequest("GET", utils.JoinURL(url, Conf.TutumUUID), nil, headers)
 	if err != nil {
-		SendError(err, "Failed to get registartion info after 5 mins", nil)
+		SendError(err, "Failed to get registration info after 5 minutes", nil)
 		Logger.Printf("Get registration info error, %s", err)
 	} else {
 		var form RegGetForm
@@ -132,10 +132,14 @@ func register(url, method, token, uuid, caFilePath, configFilePath string, data 
 				continue
 			}
 		}
-		if method == "PATCH" && (err.Error() == "Status: 404" || err.Error() == "Status: 401") {
+		if method == "POST" && (err.Error() == "401") {
+			SendError(err, "Registration unauthorized: POST", nil)
+			Logger.Fatalln("Cannot register node in Tutum: unauthorized. Please try again with a new Tutum token.")
+		}
+		if method == "PATCH" && (err.Error() == "404" || err.Error() == "401") {
 			return err
 		}
-		SendError(err, "Registion HTTP error", nil)
+		SendError(err, "Registration HTTP error", nil)
 		Logger.Printf("Registration failed, %s. Retry in %d seconds", err, i)
 		time.Sleep(time.Duration(i) * time.Second)
 	}

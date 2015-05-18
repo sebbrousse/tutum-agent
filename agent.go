@@ -95,8 +95,12 @@ func main() {
 			Logger.Println("Downloading NAT tunnel module...")
 			DownloadNgrok(NgrokBinaryURL, ngrokPath)
 		}
-		Logger.Println("Loading NAT tunnel module...")
-		go NatTunnel(regUrl, ngrokPath, ngrokLogPath, ngrokConfPath)
+		if *FlagSkipNatTunnel {
+			Logger.Println("Skip NAT tunnel")
+		} else {
+			Logger.Println("Loading NAT tunnel module...")
+			go NatTunnel(regUrl, ngrokPath, ngrokLogPath, ngrokConfPath)
+		}
 	}
 
 	if !*FlagStandalone {

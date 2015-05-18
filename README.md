@@ -6,15 +6,15 @@ tutum-agent
 
 This is the agent Tutum uses to set up nodes. It's a daemon that will register the host with the Tutum API using a user token (`TutumToken`), and will manage the installation, configuration and ongoing upgrade of the Docker daemon.
 
-For information on how to install it in your host, please check the [Bring Your Own Node](https://support.tutum.co/support/solutions/articles/5000513678-bring-your-own-node) documentation.
+For information on how to install it in your host, please check the [Bring Your Own Node](http://go.tutum.co/support-byon) documentation.
 
 
 ## Running
 
-If installing from the `.deb` package, Tutum Agent will be configured in upstart to be launched on boot.
+If installing from a `.deb` or `.rpm` package, Tutum Agent will be configured in upstart to be launched on boot.
 
 ```
-# tutum-agent -h     
+# tutum-agent -h
 Usage of ./tutum-agent:
   -debug=false: Enable debug mode
   -docker-host="": Override 'DockerHost'
@@ -55,12 +55,12 @@ Logs are stored under `/var/log/tutum/`:
 
 ## Building
 
-Run `make` to build binaries and `.deb` packages which will be stored in the `build/` folder.
+Run `make` to build binaries and `.deb` and `.rpm` packages which will be stored in the `build/` folder.
 
 
 ## Known limitations
 
-Currently only tested on Ubuntu 14.04
+Currently only tested on Ubuntu 14.04 and CentOS 7
 
 
 ## Reporting security issues

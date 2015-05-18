@@ -1,2 +1,3 @@
 gpg*
-package.deb
+*.deb
+*.rpm

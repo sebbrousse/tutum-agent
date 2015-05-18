@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"os/exec"
 	"strings"
@@ -90,7 +91,9 @@ func monitorTunnels(url, ngrokLogPath string) {
 			terms := strings.Split(line.Text, " ")
 			tunnel := terms[len(terms)-1]
 			Logger.Printf("Found new tunnel: %s", tunnel)
-			patchTunnelToTutum(url, tunnel)
+			if tunnel != "" {
+				patchTunnelToTutum(url, tunnel)
+			}
 		}
 	}
 }
@@ -157,10 +160,8 @@ func updateNgrokHost(url string) {
 
 func isNodeNated() bool {
 	for {
-		cmdstring := fmt.Sprintf("nc -w 10 127.0.0.1 %s < /dev/null", DockerHostPort)
-		command := exec.Command("/bin/sh", "-c", cmdstring)
-		command.Start()
-		if err := command.Wait(); err == nil {
+		_, err := net.Dial("tcp", fmt.Sprintf("%s:%s", "localhost", DockerHostPort))
+		if err == nil {
 			break
 		} else {
 			time.Sleep(2 * time.Second)
@@ -168,14 +169,12 @@ func isNodeNated() bool {
 	}
 
 	Logger.Printf("Testing if docker port %s is publicly reachable...", DockerHostPort)
-	cmdstring := fmt.Sprintf("nc -w 10 %s %s < /dev/null", Conf.CertCommonName, DockerHostPort)
-	command := exec.Command("/bin/sh", "-c", cmdstring)
-	command.Start()
-	if err := command.Wait(); err != nil {
-		Logger.Printf("Port %s is not publicly reachable", DockerHostPort)
-		return true
-	} else {
+	_, err := net.Dial("tcp", fmt.Sprintf("%s:%s", Conf.CertCommonName, DockerHostPort))
+	if err == nil {
 		Logger.Printf("Port %s is publicly reachable", DockerHostPort)
 		return false
+	} else {
+		Logger.Printf("Port %s is not publicly reachable: %s", DockerHostPort, err)
+		return true
 	}
 }
