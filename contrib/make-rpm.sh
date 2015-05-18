@@ -87,7 +87,6 @@ EOF
       --prefix / \
       --description "$PACKAGE_DESCRIPTION" \
       --maintainer "$PACKAGE_MAINTAINER" \
-<<<<<<< HEAD
       -t rpm . \
       --conflicts docker \
       --conflicts docker.io \
