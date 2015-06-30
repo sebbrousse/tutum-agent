@@ -58,13 +58,16 @@ Logs are stored under `/var/log/tutum/`:
 Run `make` to build binaries and `.deb` and `.rpm` packages which will be stored in the `build/` folder.
 
 
-## Known limitations
+## Supported Distributions
 
-Currently only tested on Ubuntu 14.04 and CentOS 7
+Currently supported and tested on:
+
+- Ubuntu 13.04, 14.04, 15.04
+- CentOS 7
+- Fedora 21, 22
+- Debian 8
 
 
 ## Reporting security issues
 
 In order to report a security issue, please send us an email to [security@tutum.co](mailto:security@tutum.co). Please use GPG key ID `666DAA4A` on `keys.gnupg.net` to encrypt your email. Thank you!
-
-
