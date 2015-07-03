@@ -25,10 +25,11 @@ var (
 	DockerBinaryURL           = "https://files.tutum.co/packages/docker/latest.json"
 	NgrokBinaryURL            = ""
 	NgrokHost                 = ""
+	NodePublicIp              = ""
 )
 
 const (
-	VERSION               = "0.15.0"
+	VERSION               = "0.16.0"
 	defaultCertCommonName = ""
 	defaultDockerHost     = "tcp://0.0.0.0:2375"
 	defaultTutumHost      = "https://dashboard.tutum.co/"
@@ -63,4 +64,6 @@ const (
 	ReniceSleepTime = 5 //seconds
 
 	DockerHostPort = "2375"
+
+	DialTimeOut = 10 //seconds
 )
