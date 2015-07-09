@@ -91,10 +91,6 @@ func main() {
 	StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath)
 
 	if !*FlagStandalone {
-		if NgrokBinaryURL != "" {
-			Logger.Println("Downloading NAT tunnel module...")
-			DownloadNgrok(NgrokBinaryURL, ngrokPath)
-		}
 		if *FlagSkipNatTunnel {
 			Logger.Println("Skip NAT tunnel")
 		} else {

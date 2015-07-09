@@ -106,6 +106,7 @@ func downloadFile(url, path, name string) {
 
 	Logger.Printf("Downloading %s from %s", name, def.Download_url)
 	data := downloadTarget(def)
+	Logger.Printf("Saving %s to %s", name, path)
 	writeToFile(data, path)
 }
 

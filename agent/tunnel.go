@@ -21,13 +21,15 @@ type TunnelPatchForm struct {
 }
 
 func NatTunnel(url, ngrokPath, ngrokLogPath, ngrokConfPath, ip string) {
-	if !utils.FileExist(ngrokPath) {
-		Logger.Printf("Cannot find NAT tunnel binary (%s)", ngrokPath)
+	if !isNodeNated(ip) {
 		return
 	}
 
-	if !isNodeNated(ip) {
-		return
+	if !utils.FileExist(ngrokPath) {
+		Logger.Println("Cannot find ngrok binary at", ngrokPath)
+		DownloadNgrok(NgrokBinaryURL, ngrokPath)
+	} else {
+		Logger.Println("Found ngrok binary at", ngrokPath)
 	}
 
 	updateNgrokHost(url)
@@ -116,11 +118,12 @@ func patchTunnelToTutum(url, tunnel string) {
 		SendError(err, "Failed to patch tunnel address to Tutum", nil)
 		Logger.Println("Failed to patch tunnel address to Tutum,", err)
 	}
+	Logger.Println("New tunnel has been set up")
 }
 
 func DownloadNgrok(url, ngrokBinPath string) {
 	if !utils.FileExist(ngrokBinPath) {
-		Logger.Println("Downloading NAT tunnel binary...")
+		Logger.Println("Downloading NAT tunnel binary ...")
 		downloadFile(url, ngrokBinPath, "ngrok")
 	}
 }
