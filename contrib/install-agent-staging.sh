@@ -9,7 +9,7 @@ GPG_KEY_PACKAGE_ID=90E64D7C
 GPG_KEY_TUTUM_URL=https://files.tutum.co/keys/$GPG_KEY_TUTUM_ID.pub
 GPG_KEY_PACKAGE_URL=https://files.tutum.co/keys/$GPG_KEY_PACKAGE_ID.pub
 S3_BUCKET=repo-test.tutum.co.s3.amazonaws.com
-TUTUM_HOST=https://app-test.tutum.co/
+TUTUM_HOST=${TUTUM_HOST:-https://app-test.tutum.co/}
 SUPPORT_URL=http://go.tutum.co/support-byon
 export DEBIAN_FRONTEND=noninteractive
 

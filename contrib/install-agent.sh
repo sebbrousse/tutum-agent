@@ -9,7 +9,7 @@ GPG_KEY_PACKAGE_ID=A87A2270
 GPG_KEY_TUTUM_URL=https://files.tutum.co/keys/$GPG_KEY_TUTUM_ID.pub
 GPG_KEY_PACKAGE_URL=https://files.tutum.co/keys/$GPG_KEY_PACKAGE_ID.pub
 S3_BUCKET=repo.tutum.co
-TUTUM_HOST=https://dashboard.tutum.co/
+TUTUM_HOST=${TUTUM_HOST:-https://dashboard.tutum.co/}
 SUPPORT_URL=http://go.tutum.co/support-byon
 export DEBIAN_FRONTEND=noninteractive
 
