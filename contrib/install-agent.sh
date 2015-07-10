@@ -5,10 +5,10 @@
 #
 set -e
 GPG_KEY_TUTUM_ID=A87A2270
-GPG_KEY_PACKAGE_ID=A87A2270
+GPG_KEY_PACKAGE_ID=${GPG_KEY_PACKAGE_ID:-A87A2270}
 GPG_KEY_TUTUM_URL=https://files.tutum.co/keys/$GPG_KEY_TUTUM_ID.pub
 GPG_KEY_PACKAGE_URL=https://files.tutum.co/keys/$GPG_KEY_PACKAGE_ID.pub
-S3_BUCKET=repo.tutum.co
+TUTUM_REPO=${TUTUM_REPO:-repo.tutum.co}
 TUTUM_HOST=${TUTUM_HOST:-https://dashboard.tutum.co/}
 SUPPORT_URL=http://go.tutum.co/support-byon
 export DEBIAN_FRONTEND=noninteractive
@@ -66,7 +66,7 @@ case "$(get_distribution_type)" in
 		modprobe -q aufs || apt-get update -qq && apt-get install -yq linux-image-extra-$(uname -r) || \
 			echo "!! Failed to install linux-image-extra package. AUFS support (which is recommended) may not be available."
 		echo "-> Installing tutum-agent..."
-		echo deb [arch=amd64] http://$S3_BUCKET/ubuntu/ tutum main > /etc/apt/sources.list.d/tutum.list
+		echo deb [arch=amd64] http://$TUTUM_REPO/ubuntu/ tutum main > /etc/apt/sources.list.d/tutum.list
 		apt-get update -qq -o Dir::Etc::sourceparts="/dev/null" -o APT::List-Cleanup=0 -o Dir::Etc::sourcelist="sources.list.d/tutum.list" && apt-get install -yq tutum-agent
 		;;
 	fedora|centos)
@@ -78,7 +78,7 @@ case "$(get_distribution_type)" in
 		cat > /etc/yum.repos.d/tutum.repo <<EOF
 [tutum]
 name=Tutum
-baseurl=http://$S3_BUCKET/redhat/\$basearch
+baseurl=http://$TUTUM_REPO/redhat/\$basearch
 enabled=1
 gpgkey=$GPG_KEY_PACKAGE_URL
 repo_gpgcheck=1
