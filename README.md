@@ -66,6 +66,7 @@ Currently supported and tested on:
 - CentOS 7
 - Fedora 21, 22
 - Debian 8
+- Red Hat Enterprise Linux 7
 
 
 ## Reporting security issues

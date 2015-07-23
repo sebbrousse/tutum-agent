@@ -69,7 +69,7 @@ case "$(get_distribution_type)" in
 		echo deb [arch=amd64] http://$TUTUM_REPO/ubuntu/ tutum main > /etc/apt/sources.list.d/tutum.list
 		apt-get update -qq -o Dir::Etc::sourceparts="/dev/null" -o APT::List-Cleanup=0 -o Dir::Etc::sourcelist="sources.list.d/tutum.list" && apt-get install -yq tutum-agent
 		;;
-	fedora|centos)
+	fedora|centos|rhel)
 		echo "-> Adding Tutum's GPG key..."
 		yum install -y gpg rpm curl
 		curl -Ls --retry 30 --retry-delay 10 $GPG_KEY_TUTUM_URL | gpg --import -
