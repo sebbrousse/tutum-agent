@@ -3,6 +3,7 @@ package agent
 import (
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 	"time"
 )
@@ -10,7 +11,7 @@ import (
 func HandleSig() {
 	c := make(chan os.Signal, 1)
 
-	signal.Notify(c, os.Interrupt, os.Kill, syscall.SIGTERM)
+	signal.Notify(c, os.Interrupt, os.Kill, syscall.SIGTERM, syscall.SIGHUP)
 	go func() {
 		for {
 			s := <-c
@@ -27,6 +28,8 @@ func HandleSig() {
 					DockerProcess.Signal(syscall.SIGTERM)
 				}
 				syscall.Kill(os.Getpid(), syscall.SIGTERM)
+			} else if s == syscall.SIGHUP {
+				go ReloadLogger(path.Join(LogDir, TutumLogFileName))
 			} else {
 				go func() {
 					for {

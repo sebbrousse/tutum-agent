@@ -151,6 +151,7 @@ func LoadDefaultConf() {
 func SetLogger(logFile string) {
 	if *FlagLogToStdout {
 		Logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
+		TutumLogDescriptor = os.Stdout
 	} else {
 		f, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
@@ -160,5 +161,24 @@ func SetLogger(logFile string) {
 			f = os.Stdout
 		}
 		Logger = log.New(f, "", log.Ldate|log.Ltime)
+		TutumLogDescriptor = f
+	}
+}
+
+func ReloadLogger(logFile string) {
+	if TutumLogDescriptor.Fd() != os.Stdout.Fd() {
+		f, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			SendError(err, "Failed to open tutum log file", nil)
+			log.Println(err)
+			log.Println("Log to stdout instead")
+			f = os.Stdout
+		}
+		Logger = log.New(f, "", log.Ldate|log.Ltime)
+		TutumLogDescriptor.Close()
+		TutumLogDescriptor = f
+		Logger.Print("SIGHUP: Tutum log file descriptor has been reload")
+	} else {
+		Logger.Print("SIGHUP: No need to reload log when printing to stdout")
 	}
 }
