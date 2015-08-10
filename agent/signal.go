@@ -29,7 +29,7 @@ func HandleSig() {
 				}
 				syscall.Kill(os.Getpid(), syscall.SIGTERM)
 			} else if s == syscall.SIGHUP {
-				go ReloadLogger(path.Join(LogDir, TutumLogFileName))
+				go ReloadLogger(path.Join(LogDir, TutumLogFileName), path.Join(LogDir, DockerLogFileName))
 			} else {
 				go func() {
 					for {
