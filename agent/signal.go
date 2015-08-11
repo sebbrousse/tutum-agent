@@ -20,7 +20,8 @@ func HandleSig() {
 				Logger.Println("User interrupt")
 				if DockerProcess == nil {
 					Logger.Println("Docker daemon is not running")
-					Logger.Fatalln("Exiting agent")
+					os.RemoveAll(TutumPidFile)
+					Logger.Fatal("Exiting agent")
 				} else {
 					Logger.Println("Docker daemon is running")
 					Logger.Println("Starting to shut down docker daemon gracefully")
@@ -37,6 +38,7 @@ func HandleSig() {
 							time.Sleep(10 * time.Millisecond)
 						} else {
 							Logger.Println("Exiting agent")
+							os.RemoveAll(TutumPidFile)
 							os.Exit(130)
 						}
 					}

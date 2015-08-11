@@ -6,8 +6,11 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
+	"path"
+	"strconv"
 	"strings"
 )
 
@@ -196,4 +199,21 @@ func ReloadLogger(tutumLogFile string, dockerLogFile string) {
 		DockerLogDescriptor = f
 		Logger.Print("SIGHUP: Docker log file descriptor has been reloaded")
 	}
+}
+
+func checkPidFile(pidFile string) {
+	if pid, err := ioutil.ReadFile(pidFile); err == nil {
+		if _, err := os.Stat(path.Join("/proc", string(pid))); err == nil {
+			Logger.Fatal("Found pid file, make sure that tutum-agent is not running or remove", pid)
+		}
+	}
+}
+
+func CreatePidFile(pidFile string) {
+	checkPidFile(pidFile)
+	pid := strconv.Itoa(os.Getpid())
+	if err := ioutil.WriteFile(pidFile, []byte(pid), 644); err != nil {
+		Logger.Fatal("Cannot create pid file:", pidFile)
+	}
+	Logger.Printf("Create pid file(%s): %s", pidFile, pid)
 }

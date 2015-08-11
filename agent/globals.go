@@ -57,6 +57,7 @@ const (
 	NgrokBinaryName        = "ngrok"
 	NgrokLogName           = "ngrok.log"
 	NgrokConfName          = "ngrok.conf"
+	TutumPidFile           = "/var/run/tutum-agent.pid"
 
 	RegEndpoint       = "api/agent/node/"
 	DockerDefaultHost = "unix:///var/run/docker.sock"

@@ -33,6 +33,8 @@ func main() {
 
 	ParseFlag()
 	SetLogger(path.Join(LogDir, TutumLogFileName))
+	CreatePidFile(TutumPidFile)
+
 	PrepareFiles(configFilePath, dockerBinPath, keyFilePath, certFilePath)
 	SetConfigFile(configFilePath)
 
