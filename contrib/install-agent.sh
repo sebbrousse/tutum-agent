@@ -103,6 +103,20 @@ cat > /etc/tutum/agent/tutum-agent.conf <<EOF
 	"CertCommonName":"${3}"
 }
 EOF
+
+echo "-> Configuring logroate ..."
+cat > /etc/logrotate.d/tutum-agent <<EOF
+/var/log/tutum/agent.log /var/log/tutum/docker.log {
+  rotate 0
+  copytruncate
+  sharedscripts
+  maxsize 10M
+  postrotate
+    kill -HUP \$(cat /var/run/tutum-agent.pid)
+  endscript
+}
+EOF
+
 service tutum-agent restart > /dev/null 2>&1
 echo "-> Done!"
 cat <<EOF

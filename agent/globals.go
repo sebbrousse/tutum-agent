@@ -6,17 +6,21 @@ import (
 )
 
 var (
-	FlagDebugMode     *bool
-	FlagLogToStdout   *bool
-	FlagStandalone    *bool
-	FlagSkipNatTunnel *bool
-	FlagDockerHost    *string
-	FlagDockerOpts    *string
-	FlagTutumHost     *string
-	FlagTutumToken    *string
-	FlagTutumUUID     *string
-	FlagNgrokToken    *string
-	FlagNgrokHost     *string
+	FlagDebugMode             *bool
+	FlagLogToStdout           *bool
+	FlagStandalone            *bool
+	FlagSkipNatTunnel         *bool
+	FlagDockerHost            *string
+	FlagDockerOpts            *string
+	FlagTutumHost             *string
+	FlagTutumToken            *string
+	FlagTutumUUID             *string
+	FlagNgrokToken            *string
+	FlagNgrokHost             *string
+	TutumLogDescriptor        *os.File
+	DockerLogDescriptor       *os.File
+	DockerLogStdoutDescriptor *os.File
+	DockerLogStderrDescriptor *os.File
 
 	Conf                      Configuration
 	Logger                    *log.Logger
@@ -53,6 +57,7 @@ const (
 	NgrokBinaryName        = "ngrok"
 	NgrokLogName           = "ngrok.log"
 	NgrokConfName          = "ngrok.conf"
+	TutumPidFile           = "/var/run/tutum-agent.pid"
 
 	RegEndpoint       = "api/agent/node/"
 	DockerDefaultHost = "unix:///var/run/docker.sock"
