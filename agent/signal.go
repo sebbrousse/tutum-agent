@@ -32,6 +32,12 @@ func HandleSig() {
 			} else if s == syscall.SIGHUP {
 				go ReloadLogger(path.Join(LogDir, TutumLogFileName), path.Join(LogDir, DockerLogFileName))
 			} else {
+				if DockerProcess != nil {
+					Logger.Println("Docker daemon is running")
+					Logger.Println("Starting to shut down docker daemon gracefully")
+					ScheduleToTerminateDocker = true
+					DockerProcess.Signal(syscall.SIGTERM)
+				}
 				go func() {
 					for {
 						if DockerProcess != nil {
