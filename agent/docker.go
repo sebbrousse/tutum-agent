@@ -29,18 +29,18 @@ func StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath string) {
 
 	if *FlagDebugMode {
 		cmdstring = fmt.Sprintf("-d -D -H %s -H %s --tlscert %s --tlskey %s --tlscacert %s --tlsverify",
-			Conf.DockerHost, DockerDefaultHost, certFilePath, keyFilePath, caFilePath)
+			DockerDefaultHost, Conf.DockerHost, certFilePath, keyFilePath, caFilePath)
 	} else {
 		cmdstring = fmt.Sprintf("-d -H %s -H %s --tlscert %s --tlskey %s --tlscacert %s --tlsverify",
-			Conf.DockerHost, DockerDefaultHost, certFilePath, keyFilePath, caFilePath)
+			DockerDefaultHost, Conf.DockerHost, certFilePath, keyFilePath, caFilePath)
 	}
 	if *FlagStandalone && !utils.FileExist(caFilePath) {
 		if *FlagDebugMode {
 			cmdstring = fmt.Sprintf("-d -D -H %s -H %s --tlscert %s --tlskey %s --tls",
-				Conf.DockerHost, DockerDefaultHost, certFilePath, keyFilePath)
+				DockerDefaultHost, Conf.DockerHost, certFilePath, keyFilePath)
 		} else {
 			cmdstring = fmt.Sprintf("-d -H %s -H %s --tlscert %s --tlskey %s --tls",
-				Conf.DockerHost, DockerDefaultHost, certFilePath, keyFilePath)
+				DockerDefaultHost, Conf.DockerHost, certFilePath, keyFilePath)
 		}
 
 		fmt.Fprintln(os.Stderr, "WARNING: standalone mode activated but no CA certificate found - client authentication disabled")
