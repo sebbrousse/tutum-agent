@@ -20,6 +20,7 @@ type Configuration struct {
 	TutumHost      string
 	TutumToken     string
 	TutumUUID      string
+	DockerOpts     string
 }
 
 func ParseFlag() {
@@ -43,7 +44,8 @@ func ParseFlag() {
 			"          DockerHost=\"xxx\"\n",
 			"          TutumHost=\"xxx\"\n",
 			"          TutumToken=\"xxx\"\n",
-			"          TutumUUID=\"xxx\"\n")
+			"          TutumUUID=\"xxx\"\n",
+			"          DockerOpts=\"xxx\"\n")
 	}
 	flag.Parse()
 
@@ -85,6 +87,8 @@ func SetConfigFile(configFilePath string) {
 					Conf.TutumToken = value
 				} else if strings.ToLower(key) == strings.ToLower("TutumUUID") {
 					Conf.TutumUUID = value
+				} else if strings.ToLower(key) == strings.ToLower("DockerOpts") {
+					Conf.DockerOpts = value
 				} else {
 					fmt.Fprintf(os.Stderr, "Unsupported item \"%s\" in \"tutum-agent set\" command\n", key)
 					os.Exit(1)
