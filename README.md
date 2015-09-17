@@ -62,10 +62,11 @@ Run `make` to build binaries and `.deb` and `.rpm` packages which will be stored
 
 Currently supported and tested on:
 
-- Ubuntu 13.04, 14.04, 15.04
+- Ubuntu 14.04, 15.04
 - CentOS 7
 - Fedora 21, 22
 - Debian 8
+- Red Hat Enterprise Linux 7
 
 
 ## Reporting security issues

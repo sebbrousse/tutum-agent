@@ -2,6 +2,7 @@ package agent
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path"
@@ -28,25 +29,25 @@ func StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath string) {
 
 	if *FlagDebugMode {
 		cmdstring = fmt.Sprintf("-d -D -H %s -H %s --tlscert %s --tlskey %s --tlscacert %s --tlsverify",
-			Conf.DockerHost, DockerDefaultHost, certFilePath, keyFilePath, caFilePath)
+			DockerDefaultHost, Conf.DockerHost, certFilePath, keyFilePath, caFilePath)
 	} else {
 		cmdstring = fmt.Sprintf("-d -H %s -H %s --tlscert %s --tlskey %s --tlscacert %s --tlsverify",
-			Conf.DockerHost, DockerDefaultHost, certFilePath, keyFilePath, caFilePath)
+			DockerDefaultHost, Conf.DockerHost, certFilePath, keyFilePath, caFilePath)
 	}
 	if *FlagStandalone && !utils.FileExist(caFilePath) {
 		if *FlagDebugMode {
 			cmdstring = fmt.Sprintf("-d -D -H %s -H %s --tlscert %s --tlskey %s --tls",
-				Conf.DockerHost, DockerDefaultHost, certFilePath, keyFilePath)
+				DockerDefaultHost, Conf.DockerHost, certFilePath, keyFilePath)
 		} else {
 			cmdstring = fmt.Sprintf("-d -H %s -H %s --tlscert %s --tlskey %s --tls",
-				Conf.DockerHost, DockerDefaultHost, certFilePath, keyFilePath)
+				DockerDefaultHost, Conf.DockerHost, certFilePath, keyFilePath)
 		}
 
 		fmt.Fprintln(os.Stderr, "WARNING: standalone mode activated but no CA certificate found - client authentication disabled")
 	}
 
-	if *FlagDockerOpts != "" {
-		cmdstring = cmdstring + " " + *FlagDockerOpts
+	if Conf.DockerOpts != "" {
+		cmdstring = cmdstring + " " + Conf.DockerOpts
 	}
 
 	cmdslice, err := shlex.Split(cmdstring)
@@ -140,6 +141,19 @@ func createDockerSymlink(dockerBinPath, dockerSymbolicLink string) {
 }
 
 func runDocker(cmd *exec.Cmd) {
+	DockerLogStdoutDescriptor, err := cmd.StdoutPipe()
+	if err != nil {
+		SendError(err, "Failed to get docker piped stdout", nil)
+		Logger.Println(err)
+		Logger.Println("Cannotget docker piped stdout")
+	}
+	DockerLogStderrDescriptor, err := cmd.StderrPipe()
+	if err != nil {
+		SendError(err, "Failed to get docker piped stdout", nil)
+		Logger.Println(err)
+		Logger.Println("Cannotget docker piped stdout")
+	}
+
 	//open file to log docker logs
 	dockerLog := path.Join(LogDir, DockerLogFileName)
 	f, err := os.OpenFile(dockerLog, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
@@ -148,13 +162,13 @@ func runDocker(cmd *exec.Cmd) {
 		Logger.Println(err)
 		Logger.Println("Cannot set docker log to", dockerLog)
 	} else {
-		defer f.Close()
-		cmd.Stdout = f
-		cmd.Stderr = f
+		go io.Copy(f, DockerLogStdoutDescriptor)
+		go io.Copy(f, DockerLogStderrDescriptor)
+		DockerLogDescriptor = f
+		defer DockerLogDescriptor.Close()
 	}
 
 	Logger.Println("Starting docker daemon:", cmd.Args)
-
 	if err := cmd.Start(); err != nil {
 		SendError(err, "Failed to start docker daemon", nil)
 		Logger.Println("Cannot start docker daemon:", err)

@@ -5,8 +5,12 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"os"
+	"path"
+	"strconv"
 	"strings"
 )
 
@@ -16,6 +20,7 @@ type Configuration struct {
 	TutumHost      string
 	TutumToken     string
 	TutumUUID      string
+	DockerOpts     string
 }
 
 func ParseFlag() {
@@ -39,7 +44,8 @@ func ParseFlag() {
 			"          DockerHost=\"xxx\"\n",
 			"          TutumHost=\"xxx\"\n",
 			"          TutumToken=\"xxx\"\n",
-			"          TutumUUID=\"xxx\"\n")
+			"          TutumUUID=\"xxx\"\n",
+			"          DockerOpts=\"xxx\"\n")
 	}
 	flag.Parse()
 
@@ -81,6 +87,8 @@ func SetConfigFile(configFilePath string) {
 					Conf.TutumToken = value
 				} else if strings.ToLower(key) == strings.ToLower("TutumUUID") {
 					Conf.TutumUUID = value
+				} else if strings.ToLower(key) == strings.ToLower("DockerOpts") {
+					Conf.DockerOpts = value
 				} else {
 					fmt.Fprintf(os.Stderr, "Unsupported item \"%s\" in \"tutum-agent set\" command\n", key)
 					os.Exit(1)
@@ -151,6 +159,7 @@ func LoadDefaultConf() {
 func SetLogger(logFile string) {
 	if *FlagLogToStdout {
 		Logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
+		TutumLogDescriptor = os.Stdout
 	} else {
 		f, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
@@ -160,5 +169,55 @@ func SetLogger(logFile string) {
 			f = os.Stdout
 		}
 		Logger = log.New(f, "", log.Ldate|log.Ltime)
+		TutumLogDescriptor = f
 	}
+}
+
+func ReloadLogger(tutumLogFile string, dockerLogFile string) {
+	if TutumLogDescriptor.Fd() != os.Stdout.Fd() {
+		f, err := os.OpenFile(tutumLogFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			SendError(err, "Failed to open tutum log file", nil)
+			log.Println(err)
+			log.Println("Log to stdout instead")
+			f = os.Stdout
+		}
+		Logger = log.New(f, "", log.Ldate|log.Ltime)
+		TutumLogDescriptor.Close()
+		TutumLogDescriptor = f
+		Logger.Print("SIGHUP: Tutum log file descriptor has been reloaded")
+	} else {
+		Logger.Print("SIGHUP: No need to reload tutum logs when printing to stdout")
+	}
+
+	Logger.Print("SIGHUP: Reloading docker log file descriptor")
+	f, err := os.OpenFile(dockerLogFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		SendError(err, "Failed to set docker log file", nil)
+		Logger.Println(err)
+		Logger.Println("Cannot set docker log to", dockerLogFile)
+	} else {
+		go io.Copy(f, DockerLogStdoutDescriptor)
+		go io.Copy(f, DockerLogStderrDescriptor)
+		DockerLogDescriptor.Close()
+		DockerLogDescriptor = f
+		Logger.Print("SIGHUP: Docker log file descriptor has been reloaded")
+	}
+}
+
+func checkPidFile(pidFile string) {
+	if pid, err := ioutil.ReadFile(pidFile); err == nil {
+		if _, err := os.Stat(path.Join("/proc", string(pid))); err == nil {
+			Logger.Fatal("Found pid file, make sure that tutum-agent is not running or remove ", pidFile)
+		}
+	}
+}
+
+func CreatePidFile(pidFile string) {
+	checkPidFile(pidFile)
+	pid := strconv.Itoa(os.Getpid())
+	if err := ioutil.WriteFile(pidFile, []byte(pid), 644); err != nil {
+		Logger.Fatal("Cannot create pid file:", pidFile)
+	}
+	Logger.Printf("Create pid file(%s): %s", pidFile, pid)
 }

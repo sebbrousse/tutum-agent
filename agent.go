@@ -33,6 +33,8 @@ func main() {
 
 	ParseFlag()
 	SetLogger(path.Join(LogDir, TutumLogFileName))
+	CreatePidFile(TutumPidFile)
+
 	PrepareFiles(configFilePath, dockerBinPath, keyFilePath, certFilePath)
 	SetConfigFile(configFilePath)
 
@@ -83,6 +85,12 @@ func main() {
 			}
 		}
 	}
+
+	if err := SaveConf(configFilePath, Conf); err != nil {
+		SendError(err, "Failed to save config to the conf file", nil)
+		Logger.Fatalln(err)
+	}
+
 	DownloadDocker(DockerBinaryURL, dockerBinPath)
 	HandleSig()
 	syscall.Setpriority(syscall.PRIO_PROCESS, os.Getpid(), RenicePriority)
@@ -91,10 +99,6 @@ func main() {
 	StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath)
 
 	if !*FlagStandalone {
-		if NgrokBinaryURL != "" {
-			Logger.Println("Downloading NAT tunnel module...")
-			DownloadNgrok(NgrokBinaryURL, ngrokPath)
-		}
 		if *FlagSkipNatTunnel {
 			Logger.Println("Skip NAT tunnel")
 		} else {
@@ -158,5 +162,9 @@ func PrepareFiles(configFilePath, dockerBinPath, keyFilePath, certFilePath strin
 	if *FlagTutumUUID != "" {
 		Logger.Printf("Override 'TutumUUID' from command line flag: %s\n", *FlagTutumUUID)
 		Conf.TutumUUID = *FlagTutumUUID
+	}
+	if *FlagDockerOpts != "" {
+		Logger.Printf("Override 'DockerOpts' from command line flag: %s\n", *FlagDockerOpts)
+		Conf.DockerOpts = *FlagDockerOpts
 	}
 }

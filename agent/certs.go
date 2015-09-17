@@ -22,7 +22,8 @@ import (
 func CreateCerts(keyFilePath, certFilePath, host string) {
 	if !isCertificateExist(keyFilePath, certFilePath) {
 		if host == "" {
-			Logger.Fatalln("CertCommonName is empty. This may be caused by a failed node registration with Tutum")
+			os.RemoveAll(TutumPidFile)
+			Logger.Fatal("CertCommonName is empty. This may be caused by a failed node registration with Tutum")
 		}
 		genCetificate(keyFilePath, certFilePath, host)
 		Logger.Println("New TLS certificates generated")
@@ -44,6 +45,7 @@ func genCetificate(keyFilePath, certFilePath, host string) {
 	priv, err := rsa.GenerateKey(rand.Reader, rsaBits)
 	if err != nil {
 		SendError(err, "Fatal: Failed to generate private key", nil)
+		os.RemoveAll(TutumPidFile)
 		Logger.Fatalf("Failed to generate private key: %s", err)
 	}
 
@@ -54,6 +56,7 @@ func genCetificate(keyFilePath, certFilePath, host string) {
 	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
 	if err != nil {
 		SendError(err, "Fatal: Failed to generate serial number", nil)
+		os.RemoveAll(TutumPidFile)
 		Logger.Fatalf("Failed to generate serial number: %s", err)
 	}
 
@@ -88,12 +91,14 @@ func genCetificate(keyFilePath, certFilePath, host string) {
 	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
 	if err != nil {
 		SendError(err, "Fatal: Failed to create certificate", nil)
+		os.RemoveAll(TutumPidFile)
 		Logger.Fatalf("Failed to create certificate: %s", err)
 	}
 
 	certOut, err := os.Create(certFilePath)
 	if err != nil {
 		SendError(err, "Fatal: Failed to open cert.pem for writing", nil)
+		os.RemoveAll(TutumPidFile)
 		Logger.Fatalf("Failed to open cert.pem for writing: %s", err)
 	}
 	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
@@ -102,8 +107,8 @@ func genCetificate(keyFilePath, certFilePath, host string) {
 	keyOut, err := os.OpenFile(keyFilePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		SendError(err, "Fatal: Failed to open key.pem for writing", nil)
+		os.RemoveAll(TutumPidFile)
 		Logger.Fatalf("Failed to open key.pem for writing:", err)
-		return
 	}
 	pem.Encode(keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
 	keyOut.Close()
