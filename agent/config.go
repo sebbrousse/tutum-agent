@@ -208,7 +208,7 @@ func ReloadLogger(tutumLogFile string, dockerLogFile string) {
 func checkPidFile(pidFile string) {
 	if pid, err := ioutil.ReadFile(pidFile); err == nil {
 		if _, err := os.Stat(path.Join("/proc", string(pid))); err == nil {
-			Logger.Fatal("Found pid file, make sure that tutum-agent is not running or remove", pid)
+			Logger.Fatal("Found pid file, make sure that tutum-agent is not running or remove ", pidFile)
 		}
 	}
 }
