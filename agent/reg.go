@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"time"
 
 	"github.com/tutumcloud/tutum-agent/utils"
@@ -140,8 +141,16 @@ func register(url, method, token, uuid, caFilePath, configFilePath string, data 
 		}
 		if method == "POST" && (err.Error() == "401") {
 			SendError(err, "Registration unauthorized: POST", nil)
+			Logger.Print("Cannot register node in Tutum: unauthorized. Please try again with a new Tutum token.")
+			Logger.Print("Removing the invalid tutum token from config file")
 			os.RemoveAll(TutumPidFile)
-			Logger.Fatal("Cannot register node in Tutum: unauthorized. Please try again with a new Tutum token.")
+			Conf.TutumToken = ""
+			if err := SaveConf(path.Join(TutumHome, ConfigFileName), Conf); err != nil {
+				SendError(err, "Failed to save config to the conf file", nil)
+				Logger.Print(err)
+			}
+			time.Sleep(10 * time.Second)
+			Logger.Fatal("Tutum agent is terminated")
 		}
 		if method == "PATCH" && (err.Error() == "404" || err.Error() == "401") {
 			return err
