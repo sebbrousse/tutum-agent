@@ -46,8 +46,8 @@ func StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath string) {
 		fmt.Fprintln(os.Stderr, "WARNING: standalone mode activated but no CA certificate found - client authentication disabled")
 	}
 
-	if *FlagDockerOpts != "" {
-		cmdstring = cmdstring + " " + *FlagDockerOpts
+	if Conf.DockerOpts != "" {
+		cmdstring = cmdstring + " " + Conf.DockerOpts
 	}
 
 	cmdslice, err := shlex.Split(cmdstring)
