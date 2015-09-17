@@ -85,6 +85,12 @@ func main() {
 			}
 		}
 	}
+
+	if err := SaveConf(configFilePath, Conf); err != nil {
+		SendError(err, "Failed to save config to the conf file", nil)
+		Logger.Fatalln(err)
+	}
+
 	DownloadDocker(DockerBinaryURL, dockerBinPath)
 	HandleSig()
 	syscall.Setpriority(syscall.PRIO_PROCESS, os.Getpid(), RenicePriority)
