@@ -157,7 +157,7 @@ func PrepareFiles(configFilePath, dockerBinPath, keyFilePath, certFilePath strin
 		Logger.Printf("Override 'TutumUUID' from command line flag: %s\n", *FlagTutumUUID)
 		Conf.TutumUUID = *FlagTutumUUID
 	}
-	if *FlagDockerOpts!= "" {
+	if *FlagDockerOpts != "" {
 		Logger.Printf("Override 'DockerOpts' from command line flag: %s\n", *FlagDockerOpts)
 		Conf.DockerOpts = *FlagDockerOpts
 	}
