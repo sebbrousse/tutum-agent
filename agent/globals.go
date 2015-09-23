@@ -17,6 +17,7 @@ var (
 	FlagTutumUUID             *string
 	FlagNgrokToken            *string
 	FlagNgrokHost             *string
+	FlagVersion               *bool
 	TutumLogDescriptor        *os.File
 	DockerLogDescriptor       *os.File
 	DockerLogStdoutDescriptor *os.File

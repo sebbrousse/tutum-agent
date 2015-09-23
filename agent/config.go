@@ -35,6 +35,7 @@ func ParseFlag() {
 	FlagTutumUUID = flag.String("tutum-uuid", "", "Override 'TutumUUID'")
 	FlagNgrokToken = flag.String("ngrok-token", "", "ngrok token for NAT tunneling")
 	FlagNgrokHost = flag.String("ngrok-host", "", "ngrok host for NAT tunneling")
+	FlagVersion = flag.Bool("v", false, "show version")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
