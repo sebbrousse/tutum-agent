@@ -6,22 +6,18 @@ import (
 )
 
 var (
-	FlagDebugMode             *bool
-	FlagLogToStdout           *bool
-	FlagStandalone            *bool
-	FlagSkipNatTunnel         *bool
-	FlagDockerHost            *string
-	FlagDockerOpts            *string
-	FlagTutumHost             *string
-	FlagTutumToken            *string
-	FlagTutumUUID             *string
-	FlagNgrokToken            *string
-	FlagNgrokHost             *string
-	FlagVersion               *bool
-	TutumLogDescriptor        *os.File
-	DockerLogDescriptor       *os.File
-	DockerLogStdoutDescriptor *os.File
-	DockerLogStderrDescriptor *os.File
+	FlagDebugMode     *bool
+	FlagLogToStdout   *bool
+	FlagStandalone    *bool
+	FlagSkipNatTunnel *bool
+	FlagDockerHost    *string
+	FlagDockerOpts    *string
+	FlagTutumHost     *string
+	FlagTutumToken    *string
+	FlagTutumUUID     *string
+	FlagNgrokToken    *string
+	FlagNgrokHost     *string
+	FlagVersion       *bool
 
 	Conf                      Configuration
 	Logger                    *log.Logger

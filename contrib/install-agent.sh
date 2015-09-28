@@ -112,9 +112,6 @@ if [ -d "/etc/logrotate.d" ]; then
   copytruncate
   sharedscripts
   maxsize 10M
-  postrotate
-    kill -HUP \$(cat /var/run/tutum-agent.pid)
-  endscript
 }
 EOF
 fi
