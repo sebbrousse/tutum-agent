@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"runtime"
@@ -32,6 +33,12 @@ func main() {
 	_ = os.MkdirAll(LogDir, 0755)
 
 	ParseFlag()
+
+	if *FlagVersion {
+		fmt.Println(VERSION)
+		return
+	}
+
 	SetLogger(path.Join(LogDir, TutumLogFileName))
 	CreatePidFile(TutumPidFile)
 

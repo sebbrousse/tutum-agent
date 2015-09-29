@@ -3,7 +3,6 @@ package agent
 import (
 	"os"
 	"os/signal"
-	"path"
 	"syscall"
 	"time"
 )
@@ -30,7 +29,7 @@ func HandleSig() {
 				}
 				syscall.Kill(os.Getpid(), syscall.SIGTERM)
 			} else if s == syscall.SIGHUP {
-				go ReloadLogger(path.Join(LogDir, TutumLogFileName), path.Join(LogDir, DockerLogFileName))
+				Logger.Print("Sighup is ignored")
 			} else {
 				if DockerProcess != nil {
 					Logger.Println("Docker daemon is running")

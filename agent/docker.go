@@ -141,13 +141,13 @@ func createDockerSymlink(dockerBinPath, dockerSymbolicLink string) {
 }
 
 func runDocker(cmd *exec.Cmd) {
-	DockerLogStdoutDescriptor, err := cmd.StdoutPipe()
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		SendError(err, "Failed to get docker piped stdout", nil)
 		Logger.Println(err)
 		Logger.Println("Cannotget docker piped stdout")
 	}
-	DockerLogStderrDescriptor, err := cmd.StderrPipe()
+	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		SendError(err, "Failed to get docker piped stdout", nil)
 		Logger.Println(err)
@@ -162,10 +162,9 @@ func runDocker(cmd *exec.Cmd) {
 		Logger.Println(err)
 		Logger.Println("Cannot set docker log to", dockerLog)
 	} else {
-		go io.Copy(f, DockerLogStdoutDescriptor)
-		go io.Copy(f, DockerLogStderrDescriptor)
-		DockerLogDescriptor = f
-		defer DockerLogDescriptor.Close()
+		go io.Copy(f, stdout)
+		go io.Copy(f, stderr)
+		defer f.Close()
 	}
 
 	Logger.Println("Starting docker daemon:", cmd.Args)

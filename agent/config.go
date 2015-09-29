@@ -5,7 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -35,6 +34,7 @@ func ParseFlag() {
 	FlagTutumUUID = flag.String("tutum-uuid", "", "Override 'TutumUUID'")
 	FlagNgrokToken = flag.String("ngrok-token", "", "ngrok token for NAT tunneling")
 	FlagNgrokHost = flag.String("ngrok-host", "", "ngrok host for NAT tunneling")
+	FlagVersion = flag.Bool("v", false, "show version")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
@@ -159,7 +159,6 @@ func LoadDefaultConf() {
 func SetLogger(logFile string) {
 	if *FlagLogToStdout {
 		Logger = log.New(os.Stdout, "", log.Ldate|log.Ltime)
-		TutumLogDescriptor = os.Stdout
 	} else {
 		f, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
@@ -169,39 +168,6 @@ func SetLogger(logFile string) {
 			f = os.Stdout
 		}
 		Logger = log.New(f, "", log.Ldate|log.Ltime)
-		TutumLogDescriptor = f
-	}
-}
-
-func ReloadLogger(tutumLogFile string, dockerLogFile string) {
-	if TutumLogDescriptor.Fd() != os.Stdout.Fd() {
-		f, err := os.OpenFile(tutumLogFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
-		if err != nil {
-			SendError(err, "Failed to open tutum log file", nil)
-			log.Println(err)
-			log.Println("Log to stdout instead")
-			f = os.Stdout
-		}
-		Logger = log.New(f, "", log.Ldate|log.Ltime)
-		TutumLogDescriptor.Close()
-		TutumLogDescriptor = f
-		Logger.Print("SIGHUP: Tutum log file descriptor has been reloaded")
-	} else {
-		Logger.Print("SIGHUP: No need to reload tutum logs when printing to stdout")
-	}
-
-	Logger.Print("SIGHUP: Reloading docker log file descriptor")
-	f, err := os.OpenFile(dockerLogFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		SendError(err, "Failed to set docker log file", nil)
-		Logger.Println(err)
-		Logger.Println("Cannot set docker log to", dockerLogFile)
-	} else {
-		go io.Copy(f, DockerLogStdoutDescriptor)
-		go io.Copy(f, DockerLogStderrDescriptor)
-		DockerLogDescriptor.Close()
-		DockerLogDescriptor = f
-		Logger.Print("SIGHUP: Docker log file descriptor has been reloaded")
 	}
 }
 
