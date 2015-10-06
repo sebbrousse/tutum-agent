@@ -218,7 +218,8 @@ func runDocker(cmd *exec.Cmd) {
 	go decreaseDockerChildProcessPriority(exit_renice)
 
 	if err := cmd.Wait(); err != nil {
-		out, tailErr := exec.Command("tail", "-n", "50", dockerLog).Output()
+		Logger.Println("Docker daemon died with error:", err)
+		out, tailErr := exec.Command("tail", "-n", "10", dockerLog).Output()
 		if tailErr != nil {
 			SendError(tailErr, "Failed to tail docker logs when docker terminates unexpectedly", nil)
 			Logger.Printf("Failed to tail docker logs when docker terminates unexpectedly: %s", err)
@@ -226,12 +227,12 @@ func runDocker(cmd *exec.Cmd) {
 		} else {
 			extra := map[string]interface{}{"docker-log": string(out)}
 			SendError(err, "Docker daemon terminates unexpectedly", extra)
+			Logger.Printf("\n=======DOCKER LOGS BEGIN========\n%s=======DOCKER LOGS END========\n", string(out))
 		}
-
-		Logger.Println("Docker daemon died with error:", err)
+	} else {
+		Logger.Print("Docker daemon exited")
 	}
 	exit_renice <- 1
-	Logger.Println("Docker daemon died")
 	DockerProcess = nil
 }
 

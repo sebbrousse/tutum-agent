@@ -38,8 +38,8 @@ func main() {
 		fmt.Println(VERSION)
 		return
 	}
-
 	SetLogger(path.Join(LogDir, TutumLogFileName))
+	Logger.Print("Running tutum-agent: version ", VERSION)
 	CreatePidFile(TutumPidFile)
 
 	PrepareFiles(configFilePath, dockerBinPath, keyFilePath, certFilePath)

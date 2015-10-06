@@ -16,14 +16,12 @@ func HandleSig() {
 			s := <-c
 			Logger.Println("Got signal:", s)
 			if s == os.Interrupt {
-				Logger.Println("User interrupt")
 				if DockerProcess == nil {
 					Logger.Println("Docker daemon is not running")
 					os.RemoveAll(TutumPidFile)
 					Logger.Fatal("Exiting agent")
 				} else {
-					Logger.Println("Docker daemon is running")
-					Logger.Println("Starting to shut down docker daemon gracefully")
+					Logger.Println("Docker daemon is running, sending SIGTERM")
 					ScheduleToTerminateDocker = true
 					DockerProcess.Signal(syscall.SIGTERM)
 				}
