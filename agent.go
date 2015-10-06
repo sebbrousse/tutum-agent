@@ -102,7 +102,7 @@ func main() {
 	HandleSig()
 	syscall.Setpriority(syscall.PRIO_PROCESS, os.Getpid(), RenicePriority)
 
-	Logger.Println("Starting docker daemon...")
+	Logger.Println("Initializing docker daemon...")
 	StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath)
 
 	if !*FlagStandalone {
