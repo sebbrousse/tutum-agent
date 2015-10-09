@@ -30,7 +30,7 @@ var (
 )
 
 const (
-	VERSION               = "0.18.2-dev"
+	VERSION               = "0.19.0"
 	defaultCertCommonName = ""
 	defaultDockerHost     = "tcp://0.0.0.0:2375"
 	defaultTutumHost      = "https://dashboard.tutum.co/"
