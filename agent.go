@@ -38,8 +38,8 @@ func main() {
 		fmt.Println(VERSION)
 		return
 	}
-
 	SetLogger(path.Join(LogDir, TutumLogFileName))
+	Logger.Print("Running tutum-agent: version ", VERSION)
 	CreatePidFile(TutumPidFile)
 
 	PrepareFiles(configFilePath, dockerBinPath, keyFilePath, certFilePath)
@@ -102,7 +102,7 @@ func main() {
 	HandleSig()
 	syscall.Setpriority(syscall.PRIO_PROCESS, os.Getpid(), RenicePriority)
 
-	Logger.Println("Starting docker daemon...")
+	Logger.Println("Initializing docker daemon...")
 	StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath)
 
 	if !*FlagStandalone {

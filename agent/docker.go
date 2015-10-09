@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -23,40 +24,75 @@ func DownloadDocker(url, dockerBinPath string) {
 	createDockerSymlink(dockerBinPath, DockerSymbolicLink)
 }
 
-func StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath string) {
-	var command *exec.Cmd
-	var cmdstring string
-
-	if *FlagDebugMode {
-		cmdstring = fmt.Sprintf("-d -D -H %s -H %s --tlscert %s --tlskey %s --tlscacert %s --tlsverify",
-			DockerDefaultHost, Conf.DockerHost, certFilePath, keyFilePath, caFilePath)
-	} else {
-		cmdstring = fmt.Sprintf("-d -H %s -H %s --tlscert %s --tlskey %s --tlscacert %s --tlsverify",
-			DockerDefaultHost, Conf.DockerHost, certFilePath, keyFilePath, caFilePath)
-	}
-	if *FlagStandalone && !utils.FileExist(caFilePath) {
-		if *FlagDebugMode {
-			cmdstring = fmt.Sprintf("-d -D -H %s -H %s --tlscert %s --tlskey %s --tls",
-				DockerDefaultHost, Conf.DockerHost, certFilePath, keyFilePath)
-		} else {
-			cmdstring = fmt.Sprintf("-d -H %s -H %s --tlscert %s --tlskey %s --tls",
-				DockerDefaultHost, Conf.DockerHost, certFilePath, keyFilePath)
-		}
-
-		fmt.Fprintln(os.Stderr, "WARNING: standalone mode activated but no CA certificate found - client authentication disabled")
-	}
-
-	if Conf.DockerOpts != "" {
-		cmdstring = cmdstring + " " + Conf.DockerOpts
-	}
-
-	cmdslice, err := shlex.Split(cmdstring)
+func getDockerClientVersion(dockerBinPath string) (ver string) {
+	var versionStr, version string
+	out, err := exec.Command("docker", "-v").Output()
 	if err != nil {
-		cmdslice = strings.Split(cmdstring, " ")
+		SendError(err, "Failed to get the docker version", nil)
+	}
+	versionStr = string(out)
+
+	if versionStr != "" {
+		re := regexp.MustCompile("(\\d+\\.\\d+)\\.\\d+")
+		match := re.FindStringSubmatch(versionStr)
+		if match != nil && len(match) > 0 {
+			version = match[0]
+		}
+	}
+	if version != "" {
+		Logger.Print("Found docker: version ", version)
+		pos := strings.LastIndex(version, ".")
+		if pos >= 0 {
+			ver = version[:pos]
+		}
+	}
+	return
+}
+
+func getDockerStartOpt(dockerBinPath, keyFilePath, certFilePath, caFilePath string) []string {
+	daemonOpt := "daemon"
+	ver := getDockerClientVersion(dockerBinPath)
+	if ver == "" || ver == "1.5" || ver == "1.6" || ver == "1.7" {
+		daemonOpt = "-d"
 	}
 
-	command = exec.Command(dockerBinPath, cmdslice...)
+	debugOpt := ""
+	if *FlagDebugMode {
+		debugOpt = " -D"
+	}
 
+	bindOpt := fmt.Sprintf(" -H %s -H %s", DockerDefaultHost, Conf.DockerHost)
+
+	userlandProxyOpt := ""
+	if ver == "1.7" || ver == "1.8" {
+		userlandProxyOpt = " --userland-proxy=false"
+	}
+
+	var certOpt string
+	if *FlagStandalone && !utils.FileExist(caFilePath) {
+		certOpt = fmt.Sprintf(" --tlscert %s --tlskey %s --tls", certFilePath, keyFilePath)
+		fmt.Fprintln(os.Stderr, "WARNING: standalone mode activated but no CA certificate found - client authentication disabled")
+	} else {
+		certOpt = fmt.Sprintf(" --tlscert %s --tlskey %s --tlscacert %s --tlsverify", certFilePath, keyFilePath, caFilePath)
+	}
+
+	extraOpt := ""
+	if Conf.DockerOpts != "" {
+		extraOpt = " " + Conf.DockerOpts
+	}
+
+	optStr := fmt.Sprintf("%s%s%s%s%s%s", daemonOpt, debugOpt, bindOpt, userlandProxyOpt, certOpt, extraOpt)
+
+	optSlice, err := shlex.Split(optStr)
+	if err != nil {
+		optSlice = strings.Split(optStr, " ")
+	}
+	return optSlice
+}
+
+func StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath string) {
+	optSlice := getDockerStartOpt(dockerBinPath, keyFilePath, certFilePath, caFilePath)
+	command := exec.Command(dockerBinPath, optSlice...)
 	go runDocker(command)
 }
 
@@ -182,7 +218,8 @@ func runDocker(cmd *exec.Cmd) {
 	go decreaseDockerChildProcessPriority(exit_renice)
 
 	if err := cmd.Wait(); err != nil {
-		out, tailErr := exec.Command("tail", "-n", "50", dockerLog).Output()
+		Logger.Println("Docker daemon died with error:", err)
+		out, tailErr := exec.Command("tail", "-n", "10", dockerLog).Output()
 		if tailErr != nil {
 			SendError(tailErr, "Failed to tail docker logs when docker terminates unexpectedly", nil)
 			Logger.Printf("Failed to tail docker logs when docker terminates unexpectedly: %s", err)
@@ -190,12 +227,12 @@ func runDocker(cmd *exec.Cmd) {
 		} else {
 			extra := map[string]interface{}{"docker-log": string(out)}
 			SendError(err, "Docker daemon terminates unexpectedly", extra)
+			Logger.Printf("\n=======DOCKER LOGS BEGIN========\n%s=======DOCKER LOGS END========\n", string(out))
 		}
-
-		Logger.Println("Docker daemon died with error:", err)
+	} else {
+		Logger.Print("Docker daemon exited")
 	}
 	exit_renice <- 1
-	Logger.Println("Docker daemon died")
 	DockerProcess = nil
 }
 

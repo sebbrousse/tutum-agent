@@ -129,7 +129,7 @@ func DownloadNgrok(url, ngrokBinPath string) {
 }
 
 func createNgrokConfFile(ngrokConfPath string) {
-	ngrokConfStr := fmt.Sprintf("server_addr: %s\ntrust_host_root_certs: false", NgrokHost)
+	ngrokConfStr := fmt.Sprintf("server_addr: %s\ntrust_host_root_certs: false\ninspect_addr: \"disabled\"", NgrokHost)
 	if err := ioutil.WriteFile(ngrokConfPath, []byte(ngrokConfStr), 0666); err != nil {
 		SendError(err, "Failed to create ngrok config file", nil)
 		Logger.Println("Cannot create ngrok config file:", err)
