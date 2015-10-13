@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"code.google.com/p/go-shlex"
+	"github.com/blang/semver"
 	"github.com/tutumcloud/tutum-agent/utils"
 )
 
@@ -24,8 +25,8 @@ func DownloadDocker(url, dockerBinPath string) {
 	createDockerSymlink(dockerBinPath, DockerSymbolicLink)
 }
 
-func getDockerClientVersion(dockerBinPath string) (ver string) {
-	var versionStr, version string
+func getDockerClientVersion(dockerBinPath string) (version string) {
+	var versionStr string
 	out, err := exec.Command("docker", "-v").Output()
 	if err != nil {
 		SendError(err, "Failed to get the docker version", nil)
@@ -39,21 +40,27 @@ func getDockerClientVersion(dockerBinPath string) (ver string) {
 			version = match[0]
 		}
 	}
-	if version != "" {
-		Logger.Print("Found docker: version ", version)
-		pos := strings.LastIndex(version, ".")
-		if pos >= 0 {
-			ver = version[:pos]
-		}
-	}
+	Logger.Print("Found docker: version ", version)
 	return
 }
 
 func getDockerStartOpt(dockerBinPath, keyFilePath, certFilePath, caFilePath string) []string {
-	daemonOpt := "daemon"
 	ver := getDockerClientVersion(dockerBinPath)
-	if ver == "" || ver == "1.5" || ver == "1.6" || ver == "1.7" {
+	v, err := semver.Make(ver)
+	if err != nil {
+		Logger.Println("Cannot get semantic version of", ver)
+	}
+	v1_7, err := semver.Make("1.7.0")
+	v1_8, err := semver.Make("1.8.0")
+
+	daemonOpt := "daemon"
+	if v.LT(v1_8) {
 		daemonOpt = "-d"
+	}
+
+	userlandProxyOpt := ""
+	if v.GTE(v1_7) {
+		userlandProxyOpt = " --userland-proxy=false"
 	}
 
 	debugOpt := ""
@@ -62,11 +69,6 @@ func getDockerStartOpt(dockerBinPath, keyFilePath, certFilePath, caFilePath stri
 	}
 
 	bindOpt := fmt.Sprintf(" -H %s -H %s", DockerDefaultHost, Conf.DockerHost)
-
-	userlandProxyOpt := ""
-	if ver == "1.7" || ver == "1.8" {
-		userlandProxyOpt = " --userland-proxy=false"
-	}
 
 	var certOpt string
 	if *FlagStandalone && !utils.FileExist(caFilePath) {
