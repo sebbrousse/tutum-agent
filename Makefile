@@ -14,5 +14,8 @@ clean:
 image:
 	docker build --force-rm --rm -t tutum-agent .
 
+test: image
+	docker run --rm -t tutum-agent go test -v ./...
+
 upload:
 	s3cmd sync -P build s3://files.tutum.co/tutum-agent/
