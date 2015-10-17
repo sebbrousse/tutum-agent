@@ -1,7 +1,0 @@
-machine:
-  environment:
-    GOPATH: $(echo $GOPATH | tr ":" "\n" | head -n1)
-checkout:
-  post:
-    - mkdir -p $GOPATH/src/github.com/tutumcloud/tutum-agent
-    - cp -r . $GOPATH/src/github.com/tutumcloud/tutum-agent
