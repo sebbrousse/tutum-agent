@@ -49,6 +49,8 @@ get_distribution_type()
 			lsb_dist='fedora'
 		elif [ -r /etc/centos-release ]; then
 			lsb_dist='centos'
+		elif [ -r /etc/redhat-release ]; then
+			lsb_dist='rhel'
 		elif [ -r /etc/os-release ]; then
 			lsb_dist="$(. /etc/os-release && echo "$ID")"
 		fi
