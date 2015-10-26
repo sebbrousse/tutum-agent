@@ -72,7 +72,7 @@ func main() {
 			regUrl+Conf.TutumUUID)
 		err := PatchToTutum(regUrl, caFilePath, certFilePath, configFilePath)
 		if err != nil {
-			Logger.Printf("PATCH error %s :either TutumUUID (%s) or TutumToken(%s) is invalid", err.Error(), Conf.TutumUUID, Conf.TutumToken)
+			Logger.Printf("PATCH error %s :either TutumUUID (%s) or TutumToken is invalid", err.Error(), Conf.TutumUUID)
 			Conf.TutumUUID = ""
 			SaveConf(configFilePath, Conf)
 
