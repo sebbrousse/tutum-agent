@@ -16,6 +16,7 @@ func HandleSig() {
 			s := <-c
 			Logger.Println("Got signal:", s)
 			if s == os.Interrupt {
+				ScheduledShutdown = true
 				if DockerProcess == nil {
 					Logger.Println("Docker daemon is not running")
 					os.RemoveAll(TutumPidFile)
@@ -29,6 +30,7 @@ func HandleSig() {
 			} else if s == syscall.SIGHUP {
 				Logger.Print("Sighup is ignored")
 			} else {
+				ScheduledShutdown = true
 				if DockerProcess != nil {
 					Logger.Println("Docker daemon is running")
 					Logger.Println("Starting to shut down docker daemon gracefully")

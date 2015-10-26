@@ -23,10 +23,10 @@ var (
 	Logger                    *log.Logger
 	DockerProcess             *os.Process
 	ScheduleToTerminateDocker = false
+	ScheduledShutdown         = false
 	DockerBinaryURL           = "https://files.tutum.co/packages/docker/latest.json"
 	NgrokBinaryURL            = ""
 	NgrokHost                 = ""
-	NodePublicIp              = ""
 )
 
 const (

@@ -52,7 +52,7 @@ func main() {
 		os.RemoveAll(caFilePath)
 
 		if !*FlagStandalone {
-			Logger.Printf("Registering in Tutum via POST: %s...\n", regUrl)
+			Logger.Printf("Registering in Tutum via POST: %s", regUrl)
 			PostToTutum(regUrl, caFilePath, configFilePath)
 		}
 	}
@@ -68,11 +68,11 @@ func main() {
 	}
 
 	if !*FlagStandalone {
-		Logger.Printf("Registering in Tutum via PATCH: %s...\n",
+		Logger.Printf("Registering in Tutum via PATCH: %s",
 			regUrl+Conf.TutumUUID)
 		err := PatchToTutum(regUrl, caFilePath, certFilePath, configFilePath)
 		if err != nil {
-			Logger.Printf("TutumUUID (%s) is invalid, trying to allocate a new one...\n", Conf.TutumUUID)
+			Logger.Printf("PATCH error %s :either TutumUUID (%s) or TutumToken(%s) is invalid", err.Error(), Conf.TutumUUID, Conf.TutumToken)
 			Conf.TutumUUID = ""
 			SaveConf(configFilePath, Conf)
 
@@ -80,12 +80,12 @@ func main() {
 			os.RemoveAll(certFilePath)
 			os.RemoveAll(caFilePath)
 
-			Logger.Printf("Registering in Tutum via POST: %s...\n", regUrl)
+			Logger.Printf("Registering in Tutum via POST: %s", regUrl)
 			PostToTutum(regUrl, caFilePath, configFilePath)
 
 			CreateCerts(keyFilePath, certFilePath, Conf.CertCommonName)
 
-			Logger.Printf("Registering in Tutum via PATCH: %s...\n",
+			Logger.Printf("Registering in Tutum via PATCH: %s",
 				regUrl+Conf.TutumUUID)
 			if err = PatchToTutum(regUrl, caFilePath, certFilePath, configFilePath); err != nil {
 				SendError(err, "Registion HTTP error", nil)
@@ -102,20 +102,20 @@ func main() {
 	HandleSig()
 	syscall.Setpriority(syscall.PRIO_PROCESS, os.Getpid(), RenicePriority)
 
-	Logger.Println("Initializing docker daemon...")
+	Logger.Println("Initializing docker daemon")
 	StartDocker(dockerBinPath, keyFilePath, certFilePath, caFilePath)
 
 	if !*FlagStandalone {
 		if *FlagSkipNatTunnel {
 			Logger.Println("Skip NAT tunnel")
 		} else {
-			Logger.Println("Loading NAT tunnel module...")
-			go NatTunnel(regUrl, ngrokPath, ngrokLogPath, ngrokConfPath, NodePublicIp)
+			Logger.Println("Loading NAT tunnel module")
+			go NatTunnel(regUrl, ngrokPath, ngrokLogPath, ngrokConfPath, Conf.TutumUUID)
 		}
 	}
 
 	if !*FlagStandalone {
-		Logger.Println("Verifying the registration with Tutum...")
+		Logger.Println("Verifying the registration with Tutum")
 		go VerifyRegistration(regUrl)
 	}
 
@@ -136,7 +136,7 @@ func main() {
 }
 
 func PrepareFiles(configFilePath, dockerBinPath, keyFilePath, certFilePath string) {
-	Logger.Println("Checking if config file exists...")
+	Logger.Println("Checking if config file exists")
 	if !utils.FileExist(configFilePath) {
 		LoadDefaultConf()
 		if err := SaveConf(configFilePath, Conf); err != nil {
@@ -145,7 +145,7 @@ func PrepareFiles(configFilePath, dockerBinPath, keyFilePath, certFilePath strin
 		}
 	}
 
-	Logger.Println("Loading Configuration file...")
+	Logger.Println("Loading Configuration file")
 	conf, err := LoadConf(configFilePath)
 	if err != nil {
 		SendError(err, "Failed to load configuration file", nil)

@@ -90,7 +90,7 @@ func VerifyRegistration(url string) {
 			Logger.Println("Cannot unmarshal the response", err)
 		} else {
 			if form.State == "Deployed" {
-				Logger.Println("Node registration successful with", Conf.TutumHost)
+				Logger.Printf("Node registration to %s succeeded", Conf.TutumHost)
 				return
 			}
 		}
@@ -109,9 +109,9 @@ func VerifyRegistration(url string) {
 			Logger.Println("Cannot unmarshal the response", err)
 		} else {
 			if form.State == "Deployed" {
-				Logger.Println("Node registration successful with", Conf.TutumHost)
+				Logger.Printf("Node registration to %s succeeded", Conf.TutumHost)
 			} else {
-				Logger.Println("Node registration timed out with", Conf.TutumHost)
+				Logger.Printf("Node registration to %s timed out", Conf.TutumHost)
 				Logger.Println("Node state:", form.State)
 			}
 		}
@@ -166,7 +166,6 @@ func sendRegRequest(url, method, token, uuid string, data []byte) ([]byte, error
 		"Content-Type application/json",
 		"User-Agent tutum-agent/" + VERSION}
 	return SendRequest(method, utils.JoinURL(url, uuid), data, headers)
-
 }
 
 func handleRegResponse(body []byte, caFilePath, configFilePath string) error {
@@ -197,7 +196,6 @@ func handleRegResponse(body []byte, caFilePath, configFilePath string) error {
 	}
 
 	DockerBinaryURL = responseForm.DockerBinaryURL
-	NodePublicIp = responseForm.PublicIpAddress
 
 	if responseForm.NgrokBinaryURL != "" {
 		NgrokBinaryURL = responseForm.NgrokBinaryURL
