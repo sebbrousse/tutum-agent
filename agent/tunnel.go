@@ -20,16 +20,21 @@ type TunnelPatchForm struct {
 	Version string `json:"agent_version"`
 }
 
-func NatTunnel(url, ngrokPath, ngrokLogPath, ngrokConfPath, ip string) {
-	if !isNodeNated(ip) {
+type ReachableForm struct {
+	Reachable bool `json:"reachable"`
+}
+
+func NatTunnel(url, ngrokPath, ngrokLogPath, ngrokConfPath, uuid string) {
+	if isNodeReachable(url, uuid) {
+		Logger.Printf("Node %s is publicly reachable", Conf.CertCommonName)
 		return
+	} else {
+		Logger.Printf("Node %s is NOT publicly reachable", Conf.CertCommonName)
 	}
 
 	if !utils.FileExist(ngrokPath) {
 		Logger.Println("Cannot find ngrok binary at", ngrokPath)
 		DownloadNgrok(NgrokBinaryURL, ngrokPath)
-	} else {
-		Logger.Println("Found ngrok binary at", ngrokPath)
 	}
 
 	updateNgrokHost(url)
@@ -66,16 +71,23 @@ func NatTunnel(url, ngrokPath, ngrokLogPath, ngrokConfPath, ip string) {
 	}
 
 	go monitorTunnels(url, ngrokLogPath)
-	Logger.Println("Starting NAT tunnel:", cmd.Args)
+	Logger.Println("Starting NAT tunnel")
+
+	runNgrok(cmd)
 
 	for {
-		runGronk(cmd)
-		time.Sleep(10 * time.Second)
-		Logger.Println("Restarting NAT tunnel:", cmd.Args)
+		if ScheduledShutdown {
+			Logger.Println("Scheduling for shutting down, do not restart the tunnel")
+			break
+		} else {
+			Logger.Println("Restarting NAT tunnel in 10 seconds")
+			time.Sleep(10 * time.Second)
+			runNgrok(cmd)
+		}
 	}
 }
 
-func runGronk(cmd *exec.Cmd) {
+func runNgrok(cmd *exec.Cmd) {
 	if err := cmd.Start(); err != nil {
 		SendError(err, "Failed to run NAT tunnel", nil)
 		Logger.Println(err)
@@ -155,34 +167,53 @@ func updateNgrokHost(url string) {
 		} else {
 			if form.NgrokHost != "" {
 				NgrokHost = form.NgrokHost
-				Logger.Println("Tunnel address:", NgrokHost)
+				Logger.Println("Ngrok server:", NgrokHost)
 			}
 		}
 	}
 }
 
-func isNodeNated(ip string) bool {
+func isNodeReachable(url, uuid string) bool {
+	var reachableForm ReachableForm
+
+	detailedUrl := utils.JoinURL(url, uuid+"/ping/")
+	headers := []string{"Authorization TutumAgentToken " + Conf.TutumToken,
+		"Content-Type application/json",
+		"User-Agent tutum-agent/" + VERSION}
+
+	//waiting for docker port opens
+	Logger.Print("Waiting for docker unix socket to be ready")
 	for {
-		_, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%s", "localhost", DockerHostPort), DialTimeOut*time.Second)
+		unixsock := DockerDefaultHost
+		if strings.HasPrefix(unixsock, "unix://") {
+			unixsock = DockerDefaultHost[7:]
+		}
+
+		_, err := net.DialTimeout("unix", unixsock, DialTimeOut*time.Second)
 		if err == nil {
 			break
 		} else {
 			time.Sleep(2 * time.Second)
 		}
 	}
+	Logger.Print("Docker unix socket opened")
 
-	address := ip
-	if address == "" {
-		Logger.Printf("Node public IP address return from server is empty, use FQDN instead.")
-		address = Conf.CertCommonName
-	}
-	Logger.Printf("Testing if node %s(%s:%s) is publicly reachable...", Conf.CertCommonName, address, DockerHostPort)
-	_, err := net.DialTimeout("tcp", fmt.Sprintf("%s:%s", address, DockerHostPort), DialTimeOut*time.Second)
-	if err == nil {
-		Logger.Printf("Node %s(%s:%s) is publicly reachable", Conf.CertCommonName, address, DockerHostPort)
-		return false
-	} else {
-		Logger.Printf("Node %s(%s:%s) is not publicly reachable: %s", Conf.CertCommonName, address, DockerHostPort, err)
-		return true
+	//check the port from tutum server
+	for i := 1; ; i *= 2 {
+		if i > MaxWaitingTime {
+			i = 1
+		}
+		body, err := SendRequest("POST", detailedUrl, nil, headers)
+		if err == nil {
+			if err := json.Unmarshal(body, &reachableForm); err != nil {
+				SendError(err, "Json unmarshal error", nil)
+				Logger.Println("Failed to unmarshal the response", err)
+			} else {
+				return reachableForm.Reachable
+			}
+		}
+		SendError(err, "Node reachable check HTTP error", nil)
+		Logger.Printf("Node reachable check failed, %s. Retry in %d seconds", err, i)
+		time.Sleep(time.Duration(i) * time.Second)
 	}
 }

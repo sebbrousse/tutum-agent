@@ -25,7 +25,7 @@ bundle_ubuntu() {
   mkdir -p $DIR/usr/bin
   cp /build/bin/linux/$PACKAGE_ARCHITECTURE/tutum-agent-$PKGVERSION $DIR/usr/bin/tutum-agent
 
-  cat > $DEST/postinst <<EOF
+  cat > $DEST/postinst <<'EOF'
 #!/bin/sh
 set -e
 
@@ -49,7 +49,7 @@ service tutum-agent $_dh_action 2>/dev/null || true
 #DEBHELPER#
 EOF
 
-  cat > $DEST/prerm <<EOF
+  cat > $DEST/prerm <<'EOF'
 #!/bin/sh
 set -e
 
@@ -62,7 +62,7 @@ esac
 #DEBHELPER#
 EOF
 
-  cat > $DEST/postrm <<EOF
+  cat > $DEST/postrm <<'EOF'
 #!/bin/sh
 set -e
 
