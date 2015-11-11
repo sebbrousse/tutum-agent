@@ -57,6 +57,9 @@ Logs are stored under `/var/log/tutum/`:
 
 Run `make` to build binaries and `.deb` and `.rpm` packages which will be stored in the `build/` folder.
 
+# Proxy
+
+If `HTTP_PROXY` and `HTTPS_PRXOY` is defined, tutum-agent will read and use them. (this is supported by golang natively) 
 
 ## Supported Distributions
 
