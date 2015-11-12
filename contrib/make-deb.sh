@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 DEST=$1
 
@@ -15,10 +16,10 @@ bundle_ubuntu() {
 
   # Include our init scripts
   mkdir -p $DIR/etc/init $DIR/etc/init.d $DIR/lib/systemd/system/
-  cp contrib/upstart/tutum-agent.conf $DIR/etc/init/
-  cp contrib/init.d/tutum-agent $DIR/etc/init.d/
-  cp contrib/systemd/tutum-agent.socket $DIR/lib/systemd/system/
-  cp contrib/systemd/tutum-agent.service $DIR/lib/systemd/system/
+  cp contrib/init/upstart/tutum-agent.conf $DIR/etc/init/
+  cp contrib/init/sysvinit-debian/tutum-agent $DIR/etc/init.d/
+  cp contrib/init/systemd/tutum-agent.socket $DIR/lib/systemd/system/
+  cp contrib/init/systemd/tutum-agent.service $DIR/lib/systemd/system/
 
   # Copy the binary
   # This will fail if the binary bundle hasn't been built

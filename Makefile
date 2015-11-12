@@ -2,6 +2,7 @@ default: all
 
 all: image
 	mkdir -p ./build
+	docker rm -f agentbuild || true
 	docker run --name=agentbuild tutum-agent contrib/make-all.sh
 	docker cp agentbuild:/build .
 	docker rm -f agentbuild
