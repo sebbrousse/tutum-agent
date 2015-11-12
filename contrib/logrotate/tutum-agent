@@ -1,0 +1,6 @@
+/var/log/tutum/agent.log /var/log/tutum/docker.log {
+  rotate 0
+  copytruncate
+  sharedscripts
+  maxsize 10M
+}

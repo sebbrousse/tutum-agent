@@ -106,18 +106,6 @@ cat > /etc/tutum/agent/tutum-agent.conf <<EOF
 }
 EOF
 
-if [ -d "/etc/logrotate.d" ]; then
-	echo "-> Configuring logrotate..."
-	cat > /etc/logrotate.d/tutum-agent <<EOF
-/var/log/tutum/agent.log /var/log/tutum/docker.log {
-  rotate 0
-  copytruncate
-  sharedscripts
-  maxsize 10M
-}
-EOF
-fi
-
 if [ ! -z "${1}" ]; then
 	echo "-> Starting tutum-agent service..."
 	service tutum-agent stop > /dev/null 2>&1 || true

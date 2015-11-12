@@ -21,6 +21,10 @@ bundle_redhat() {
   cp contrib/init/systemd/tutum-agent.socket $DIR/lib/systemd/system/
   cp contrib/init/systemd/tutum-agent.service $DIR/lib/systemd/system/
 
+  # Include logrotate
+  mkdir -p $DIR/etc/logrotate.d/
+  cp contrib/logrotate/tutum-agent $DIR/etc/logrotate.d/
+
   # Copy the binary
   # This will fail if the binary bundle hasn't been built
   mkdir -p $DIR/usr/bin
