@@ -11,7 +11,7 @@ PACKAGE_MAINTAINER="support@tutum.co"
 PACKAGE_DESCRIPTION="Agent to manage Docker hosts through Tutum"
 PACKAGE_LICENSE="Proprietary"
 
-bundle_ubuntu() {
+bundle_debian() {
   DIR=$DEST/staging
 
   # Include our init scripts
@@ -45,11 +45,8 @@ if ! getent group docker > /dev/null; then
 fi
 
 if [ -n "$2" ]; then
-  _dh_action=restart
-else
-  _dh_action=start
+  service tutum-agent restart 2>/dev/null || true
 fi
-service tutum-agent $_dh_action 2>/dev/null || true
 
 #DEBHELPER#
 EOF
@@ -135,4 +132,4 @@ EOF
   rm -r $DIR
 }
 
-bundle_ubuntu
+bundle_debian

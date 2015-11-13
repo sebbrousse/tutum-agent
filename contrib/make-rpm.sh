@@ -45,9 +45,7 @@ if ! getent group docker > /dev/null; then
 fi
 
 if [ -n "$2" ]; then
-  _dh_action=restart
-else
-  _dh_action=start
+  service tutum-agent restart 2>/dev/null || true
 fi
 service tutum-agent $_dh_action 2>/dev/null || true
 
