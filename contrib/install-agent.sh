@@ -106,6 +106,11 @@ cat > /etc/tutum/agent/tutum-agent.conf <<EOF
 }
 EOF
 
+if [ -d /run/systemd/system ] ; then
+	echo "-> Enabling tutum-agent to start on boot on systemd..."
+	systemctl enable tutum-agent.service || true
+fi
+
 if [ ! -z "${1}" ]; then
 	echo "-> Starting tutum-agent service..."
 	service tutum-agent stop > /dev/null 2>&1 || true
