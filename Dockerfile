@@ -1,4 +1,4 @@
-FROM golang:1.4.2
+FROM hypriot/rpi-golang:1.4.2
 
 # Install FPM for packaging
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -qy ruby ruby-dev rpm && \

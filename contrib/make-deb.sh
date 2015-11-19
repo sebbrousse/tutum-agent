@@ -5,7 +5,7 @@ DEST=$1
 
 VERSION=$(cat VERSION)
 PKGVERSION="${VERSION:-latest}"
-PACKAGE_ARCHITECTURE="${ARCHITECTURE:-amd64}"
+PACKAGE_ARCHITECTURE="${ARCHITECTURE:-arm}"
 PACKAGE_URL="http://www.tutum.co/"
 PACKAGE_MAINTAINER="support@tutum.co"
 PACKAGE_DESCRIPTION="Agent to manage Docker hosts through Tutum"
